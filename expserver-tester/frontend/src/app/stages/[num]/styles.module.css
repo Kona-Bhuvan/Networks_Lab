@@ -1,0 +1,10 @@
+.testboard{
+    background-color: white;
+    height: 100%;
+    /* width: 100%; */
+    width: calc(100vw - 300px);
+
+    display: flex;
+    flex-direction: row;
+
+}

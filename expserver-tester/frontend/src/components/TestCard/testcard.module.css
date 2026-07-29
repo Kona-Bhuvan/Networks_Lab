@@ -1,0 +1,76 @@
+.test-card {
+    height: 48px;
+    width: 100%;
+    background-color: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    display: flex;
+    /* flex-direction: row; */
+    align-items: center;
+    justify-content: space-between;
+    padding-inline: 10px;
+}
+
+.test-name {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.test-name {
+    width: max-content;
+    color: var(--text-color);
+    display: flex;
+    gap: 18px;
+    align-items: center;
+}
+
+.test-status {
+    width: 84px;
+    height: 32px;
+    color: var(--text-color);
+    /* border: 1px solid black; */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.test-info-img:hover {
+    cursor: pointer;
+}
+
+.pending {
+    background-color: var(--light-violet);
+}
+
+.running {
+    background-color: var(--light-yellow);
+}
+
+.failed {
+    background-color: var(--light-red);
+}
+
+.passed {
+    background-color: var(--light-green);
+}
+
+.dialog-close-button-container {
+    position: fixed;
+    top: 75px;
+    right: 25px;
+    /* border: 1px solid red; */
+    padding: 6px 12px;
+    border-radius: 10px;
+    color: var(--red);
+    background-color: var(--white);
+}
+
+.dialog-close-button-container:hover {
+    color: var(--white);
+    background-color: var(--red);
+    cursor: pointer;
+}

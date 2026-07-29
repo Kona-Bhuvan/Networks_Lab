@@ -1,0 +1,66 @@
+services:
+  postgresdb:
+    image: postgres:15
+    restart: always
+    env_file:
+      - .env.prod
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    networks:
+      - eXpServer-network-prod
+
+  backend:
+    restart: always
+    depends_on:
+      - redis
+      - postgresdb
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    ports:
+      - "6969:6969"
+      - "6970:6970"
+    networks:
+      - eXpServer-network-prod
+    volumes:
+      - ./uploads:/app/uploads:z
+      - migrations-data:/app/migrations
+      - ./public:/app/public:z
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - HOST_PWD=${PWD}
+    env_file:
+      - .env.prod
+    container_name: expserver-backend
+    entrypoint: "/entrypoint.sh --debug=false"
+    security_opt:
+      - label:disable
+    deploy:
+      resources:
+        limits:
+          memory: 12G
+        reservations:
+          memory: 4G
+  redis:
+    image: redis:latest
+    restart: always
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+       - eXpServer-network-prod
+
+networks:
+  eXpServer-network-prod:
+    driver: bridge
+    name: eXpServer-network-prod
+
+
+volumes:
+  redis-data:
+  postgres-data:
+  migrations-data:

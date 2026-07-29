@@ -1,0 +1,6 @@
+.introduction{
+    height: 100%;
+    width: calc(100vw - 300px);
+    background-color: var(--white);
+    overflow-y: scroll;
+}

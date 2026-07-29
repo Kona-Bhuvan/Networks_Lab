@@ -1,0 +1,155 @@
+.execute {
+    background-color: white;
+    height: 100%;
+    width: 750px;
+    border-left: 1px solid var(--border);
+    padding: 8px;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.execute-heading {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.upload-container {
+    margin-top: 8px;
+    /* border:1px solid black; */
+}
+
+.upload-heading {
+    font-size: 14px;
+    color: var(--text-color);
+    padding-bottom: 4px;
+    display: flex;
+    gap: 8px;
+}
+
+.info:hover {
+    cursor: pointer;
+}
+
+.upload-inner-container {
+    display: flex;
+    font-size: 14px;
+    /* border: 1px solid black; */
+    /* height: fit-content; */
+    justify-content: space-between;
+    /* align-items: stretch; */
+    height: 36px;
+    font-weight: 500;
+}
+
+.upload-file-container {
+    position: relative;
+    display: flex;
+    gap: 4px;
+}
+.bin{
+    position: absolute;
+    right: 4px;
+    transform:translateY(-50%);
+    top: 50%;
+}
+
+.bin:hover{
+    cursor: pointer;
+}
+
+.file-input {
+    display: none;
+}
+
+.custom-file-input,
+.add-file-input,
+.execute-button {
+    border-radius: 4px;
+}
+
+.custom-file-input {
+    background-color: var(--pink);
+    color: white;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    /* border: 1px solid black; */
+    /* height: 100%;  */
+}
+
+.custom-file-input:hover {
+    cursor: pointer;
+}
+
+.add-file-input {
+    border: 1px solid var(--border);
+    background-color: var(--input-field-background);
+    color: var(--input-field-text);
+    padding-inline: 8px;
+    height: 100%;
+    width: 250px;
+}
+
+.execute-button {
+    /* border: 1px solid black; */
+    height: 100%;
+    width: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+
+}
+
+.execute-upload {
+    background-color: var(--green);
+    color: white;
+}
+
+.execute-run,
+.execute-active-run {
+    background-color: black;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+}
+
+.execute-active-run {
+    width: 100%;
+    gap: 4px;
+}
+
+
+
+
+
+.idle-container {
+    flex-grow: 1;
+    width: 100%;
+    border: 3px dashed var(--border);
+    border-radius: 8px;
+    /* border-width: 3px; */
+    background-color: var(--test-container-background);
+    margin-top: 6px;
+    overflow-y: scroll;
+    /* max-height: 100%; */
+}
+
+.test-container-idle {
+    height: 100%;
+    padding-inline: 48px;
+    display: flex;
+    align-items: center;
+    text-align: center;
+    font-size: 36px;
+    font-weight: 600;
+    color: var(--text-color);
+    opacity: 0.45;
+
+}

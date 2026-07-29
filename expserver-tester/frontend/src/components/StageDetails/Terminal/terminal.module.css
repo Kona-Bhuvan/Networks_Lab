@@ -1,0 +1,38 @@
+/* @font-face {
+    font-family: 'TerminalFont';
+    src:    url('/frontend/public/fonts/FiraCode-Regular.ttf')format('truetype');
+    font-style: normal;
+} */
+.terminal {
+    height: 100%;
+    width: 100%;
+    overflow-y: scroll;
+    background-color: var(--black-terminal);
+    color: var(--white);
+    font-size: 12px;
+    padding: 8px 0 0 16px;
+}
+
+.terminal-heading {
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* .terminal-message{
+    padding-block: 2px;
+    border: 1px solid red;
+} */
+
+.terminal-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    justify-content: center;
+    align-items: start;
+}
+
+.terminal-message {
+    font-weight: 400;
+    font-family: var(--font-jetbrains-mono), monospace;
+    font-size: 0.75rem;
+}

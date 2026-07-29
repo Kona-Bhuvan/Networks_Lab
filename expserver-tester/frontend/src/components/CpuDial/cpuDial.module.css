@@ -1,0 +1,120 @@
+.cpu-dial{
+    height: 200px;
+    width: 200px;
+    /* border: 1px solid var(--border); */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+}
+
+.cpu-dial-container{
+    height: 150px;
+    width: 150px;
+    /* border: 1px solid red; */
+}
+
+.outer-circle{
+    height: 150px;
+    width: 150px;
+    border-radius: 150px;
+    background-color: var(--black-dial);
+}
+
+.middle-circle{
+    position: relative;
+    height: 150px;
+    width: 150px;
+    /* border: 1px solid blue; */
+    border-radius: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.inner-circle{
+    position: relative;
+    height: 135px;
+    width: 135px;
+    border-radius: 135px;
+    background-color: var(--white);
+    
+    display: flex;
+    /* align-items: center; */
+    justify-content: center;
+    
+}
+
+/* .outer-quadrant{
+    height: 75px;
+    width: 75px;
+    border: 1px solid red;
+    background-color: var(--white);
+
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -100%) rotateZ(45deg);
+} */
+
+.outer-quadrant{
+    height: 155px;
+    width: 155px;
+    /* border: 1px solid red; */
+    background: var(--white);
+    /* background-color: yellow; */
+    clip-path: polygon(50% 50%, 100% 50%, 100% 100%, 50% 100%);
+    border-radius: 50%;
+    position: absolute;
+    transform: rotateZ(45deg);
+}
+
+.dial-display{
+    position: absolute;
+    top:50%;
+    left:50%;
+    transform: translate(-50%, -50%);
+    /* border: 1PX solid red; */
+    width: 80px;
+}
+
+.dial-display-value{
+    font-size: 28px;
+    color: var(--dark-blue);
+    font-weight: 700;
+    text-align: center;
+}
+
+.dial-display-label{
+    font-size: 10px;
+    text-align: center;
+    /* border: 1px solid red; */
+    width: 80px;
+    color: var(--text-color);
+}
+
+.inner-quadrant{
+    height: 149px;
+    width: 149px;
+    background: var(--dark-blue);
+    clip-path: polygon(50% 50%, 100% 50%, 100% 100%, 50% 100%);
+    border-radius: 50%;
+    position: absolute;
+    transform: rotateZ(45deg);
+    
+}
+
+/* .inner-quadrant-one{
+    transform: rotateZ(135deg);
+}
+
+.inner-quadrant-two{
+    background: red;
+    transform: rotateZ(225deg);
+}
+
+.inner-quadrant-three{
+    background: green;
+    transform: rotateZ(315deg);
+} */

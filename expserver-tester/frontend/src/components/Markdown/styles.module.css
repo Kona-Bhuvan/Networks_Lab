@@ -1,0 +1,147 @@
+/* Typography */
+.markdownBody {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    font-size: 16px;
+    line-height: 1.6;
+    color: #24292e;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 6px;
+    max-width: 100%;
+    box-shadow: 0 1px 3px rgba(27, 31, 35, 0.1);
+}
+
+/* Headings */
+.markdownBody h1,
+.markdownBody h2,
+.markdownBody h3,
+.markdownBody h4,
+.markdownBody h5,
+.markdownBody h6 {
+    margin-top: 24px;
+    margin-bottom: 16px;
+    font-weight: 600;
+    line-height: 1.25;
+    border-bottom: 1px solid #eaecef;
+    padding-bottom: 0.3em;
+}
+
+.markdownBody h1 {
+    font-size: 2em;
+}
+
+.markdownBody h2 {
+    font-size: 1.5em;
+}
+
+.markdownBody h3 {
+    font-size: 1.25em;
+}
+
+/* Paragraphs */
+.markdownBody p {
+    margin-bottom: 16px;
+}
+
+/* Links */
+.markdownBody a {
+    color: #0366d6;
+    text-decoration: none;
+    background-color: transparent;
+}
+
+.markdownBody a:hover {
+    text-decoration: underline;
+}
+
+/* Blockquotes */
+.markdownBody blockquote {
+    padding: 0 1em;
+    color: #6a737d;
+    border-left: 0.25em solid #dfe2e5;
+    margin-bottom: 16px;
+}
+
+/* Lists */
+.markdownBody ul,
+.markdownBody ol {
+    padding-left: 2em;
+    margin-bottom: 16px;
+}
+
+.markdownBody ul {
+    list-style-type: disc;
+}
+
+.markdownBody ol {
+    list-style-type: decimal;
+}
+
+/* Code blocks */
+.markdownBody pre {
+    background-color: #f6f8fa;
+    padding: 16px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    overflow: auto;
+    font-size: 85%;
+    line-height: 1.45;
+}
+
+.markdownBody code {
+    background-color: rgba(27, 31, 35, 0.05);
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-size: 85%;
+    font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, Courier, monospace;
+    text-wrap: wrap;
+}
+
+.markdownBody pre>code {
+    background-color: transparent;
+    padding: 0;
+    font-size: inherit;
+}
+
+/* Tables */
+.markdownBody table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+}
+
+.markdownBody table th,
+.markdownBody table td {
+    padding: 6px 13px;
+    border: 1px solid #dfe2e5;
+}
+
+.markdownBody table th {
+    background-color: #f6f8fa;
+    font-weight: 600;
+}
+
+.markdownBody table tr {
+    background-color: #fff;
+    border-top: 1px solid #c6cbd1;
+}
+
+.markdownBody table tr:nth-child(2n) {
+    background-color: #f6f8fa;
+}
+
+/* Horizontal rules */
+.markdownBody hr {
+    height: 0.25em;
+    padding: 0;
+    margin: 24px 0;
+    background-color: #eaecef;
+    border: 0;
+}
+
+/* Images */
+.markdownBody img {
+    max-width: 100%;
+    box-shadow: 0 1px 3px rgba(27, 31, 35, 0.1);
+    border-radius: 6px;
+}
