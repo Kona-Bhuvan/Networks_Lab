@@ -60,3 +60,26 @@ gcc tcp_multi_client.c -o tcp_multi_client
 ```
 
 ---
+
+# Stage 3: UDP with Multi-threading 
+
+### Server
+```bash
+gcc udp_server.c -o udp_server -pthread
+```
+```bash
+./udp_server
+```
+
+### Client
+```bash
+nc -u localhost 8080
+```
+```bash
+gcc udp_client.c -o udp_client
+```
+```bash
+./udp_client
+```
+
+---
