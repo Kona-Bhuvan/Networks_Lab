@@ -32,3 +32,31 @@ nc localhost 8080
 ```
 
 ---
+
+# Stage 2: TCP Client
+
+### Server
+```bash
+gcc tcp_server.c -o tcp_server
+```
+```bash
+./tcp_server
+```
+
+### Client
+```bash
+gcc tcp_client.c -o tcp_client
+```
+```bash
+./tcp_client
+```
+
+### Multi Client
+```bash
+gcc tcp_multi_client.c -o tcp_multi_client
+```
+```bash
+./tcp_multi_client
+```
+
+---
