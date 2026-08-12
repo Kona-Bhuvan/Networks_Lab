@@ -83,3 +83,23 @@ gcc udp_client.c -o udp_client
 ```
 
 ---
+
+# Stage 4: Linux epoll
+
+### Server
+```bash
+gcc tcp_server.c -o tcp_server
+```
+```bash
+./tcp_server
+```
+
+### Client
+```bash
+gcc tcp_client.c -o tcp_client
+```
+```bash
+./tcp_client
+```
+
+---
