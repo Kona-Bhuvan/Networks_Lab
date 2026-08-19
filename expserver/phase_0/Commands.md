@@ -90,6 +90,8 @@ gcc udp_server.c -o udp_server -pthread
 nc -u localhost 8080
 ```
 
+### Client
+
 ```bash
 gcc udp_client.c -o udp_client
 ```
@@ -151,6 +153,36 @@ curl http://localhost:8080/
 
 ```http
 http://localhost:8080/
+```
+
+---
+
+# Stage 5-b : File Transfer using TCP
+
+### Server
+
+```bash
+gcc fp_server.c -o fp_server
+```
+
+```bash
+./fp_server
+```
+
+### Client - data transfer
+
+```bash
+nc localhost 8080
+```
+
+### Client - file transfer
+
+```bash
+gcc fp_client.c -o fp_client
+```
+
+```bash
+./fp_client
 ```
 
 ---
