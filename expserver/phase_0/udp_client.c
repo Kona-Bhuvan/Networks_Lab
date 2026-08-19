@@ -22,7 +22,7 @@ int main()
 
     // Set server address parameters
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
     server_addr.sin_port = htons(SERVER_PORT);
 
     while (1)
@@ -32,7 +32,8 @@ int main()
 
         // Send the message to the server
         sendto(sockfd, message, strlen(message), 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
-
+        printf("Sent to server!\n");
+        
         // Receive the reversed string from the server
         ssize_t n = recvfrom(sockfd, buffer, BUFF_SIZE, 0, NULL, NULL);
         buffer[n] = '\0';
