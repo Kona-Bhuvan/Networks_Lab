@@ -157,7 +157,7 @@ http://localhost:8080/
 
 ---
 
-# Stage 5-b : File Transfer using TCP
+# Stage 5-b: File Transfer using TCP
 
 ### Server
 
@@ -183,6 +183,54 @@ gcc fp_client.c -o fp_client
 
 ```bash
 ./fp_client
+```
+
+---
+
+# Stage 6: Listener & Connection Modules
+
+### build
+
+```bash
+./build.sh
+```
+
+### Debugger
+
+**ON**
+
+```bash
+export XPS_DEBUG=1
+```
+
+**OFF**
+
+```bash
+unset XPS_DEBUG
+```
+
+### Server
+
+```bash
+./xps
+```
+
+### Clients
+
+```bash
+nc localhost 8001
+```
+
+```bash
+nc localhost 8002
+```
+
+```bash
+nc localhost 8003
+```
+
+```bash
+nc localhost 8004
 ```
 
 ---
