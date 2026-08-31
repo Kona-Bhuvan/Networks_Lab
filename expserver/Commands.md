@@ -197,13 +197,13 @@ gcc fp_client.c -o fp_client
 
 ### Debugger
 
-**ON**
+*ON*
 
 ```bash
 export XPS_DEBUG=1
 ```
 
-**OFF**
+*OFF*
 
 ```bash
 unset XPS_DEBUG
@@ -231,6 +231,40 @@ nc localhost 8003
 
 ```bash
 nc localhost 8004
+```
+
+---
+
+# Stage 7: Core & Loop Modules
+
+### Server
+
+```bash
+./xps
+```
+
+### Client
+
+```bash
+nc localhost 8001
+```
+
+```bash
+nc localhost 8002
+```
+
+### Sender
+
+```bash
+gcc sender.c -o sender
+```
+
+```bash
+./sender
+```
+
+```bash
+cat huge_file.dat | ./sender
 ```
 
 ---
