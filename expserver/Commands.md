@@ -268,3 +268,25 @@ cat huge_file.dat | ./sender
 ```
 
 ---
+
+# Stage 8: Non-Blocking Sockets
+
+### Server
+
+```bash
+./xps
+```
+
+### Client
+
+```bash
+nc localhost 8001
+```
+
+### *htop* utility
+
+```bash
+htop
+```
+
+---

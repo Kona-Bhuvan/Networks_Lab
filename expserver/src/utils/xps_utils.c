@@ -91,3 +91,21 @@ char *get_remote_ip(u_int sock_fd)
 
     return ip_str;
 }
+
+void vec_filter_null(vec_void_t *vec)
+{
+    assert(vec != NULL);
+
+    int write_idx = 0;
+    for (int i = 0; i < vec->length; i++)
+    {
+        if (vec->data[i] != NULL)
+        {
+            if (write_idx != i)
+                vec->data[write_idx] = vec->data[i];
+            write_idx++;
+        }
+    }
+
+    vec->length = write_idx;
+}

@@ -1,6 +1,6 @@
 #include "../xps.h"
 
-loop_event_t *loop_event_create(u_int fd, void *ptr, xps_handler_t read_cb)
+loop_event_t *loop_event_create(u_int fd, void *ptr, xps_handler_t read_cb, xps_handler_t write_cb, xps_handler_t close_cb)
 {
     assert(ptr != NULL);
 
@@ -16,6 +16,8 @@ loop_event_t *loop_event_create(u_int fd, void *ptr, xps_handler_t read_cb)
     event->fd = fd;
     event->ptr = ptr;
     event->read_cb = read_cb;
+    event->write_cb = write_cb;
+    event->close_cb = close_cb;
 
     logger(LOG_DEBUG, "event_create()", "created event");
 
@@ -52,7 +54,7 @@ xps_loop_t *xps_loop_create(xps_core_t *core)
     }
 
     int epoll_fd = epoll_create1(0);
-    if(epoll_fd == -1)
+    if (epoll_fd == -1)
     {
         logger(LOG_ERROR, "loop_create()", "epoll_create1() failed");
         free(loop);
@@ -78,16 +80,16 @@ xps_loop_t *xps_loop_create(xps_core_t *core)
 void xps_loop_destroy(xps_loop_t *loop)
 {
     assert(loop != NULL);
-    
+
     close(loop->epoll_fd);
-    for(int i=0; i < loop->events.length; i++)
+    for (int i = 0; i < loop->events.length; i++)
     {
         loop_event_t *event = loop->events.data[i];
-        if(event != NULL)
+        if (event != NULL)
             loop_event_destroy(event);
     }
     vec_deinit(&loop->events);
-    
+
     free(loop);
 }
 
@@ -102,14 +104,16 @@ void xps_loop_destroy(xps_loop_t *loop)
  * @param event_flags : epoll event flags
  * @param ptr : Pointer to instance of xps_listener_t or xps_connection_t
  * @param read_cb : Callback function to be called on a read event
+ * @param write_cb : Callback function to be called on a write event
+ * @param close_cb : Callback function to be called on a close event
  * @return : OK on success and E_FAIL on error
  */
-int xps_loop_attach(xps_loop_t *loop, u_int fd, int event_flags, void *ptr, xps_handler_t read_cb)
+int xps_loop_attach(xps_loop_t *loop, u_int fd, int event_flags, void *ptr, xps_handler_t read_cb, xps_handler_t write_cb, xps_handler_t close_cb)
 {
     assert(loop != NULL);
     assert(ptr != NULL);
 
-    loop_event_t *event = loop_event_create(fd, ptr, read_cb);
+    loop_event_t *event = loop_event_create(fd, ptr, read_cb, write_cb, close_cb);
     if (event == NULL)
     {
         logger(LOG_ERROR, "xps_loop_attach()", "loop_event_create() failed");
@@ -145,7 +149,7 @@ int xps_loop_attach(xps_loop_t *loop, u_int fd, int event_flags, void *ptr, xps_
 int xps_loop_detach(xps_loop_t *loop, u_int fd)
 {
     assert(loop != NULL);
-    
+
     for (int i = 0; i < loop->events.length; i++)
     {
         loop_event_t *event = loop->events.data[i];
@@ -195,13 +199,30 @@ void xps_loop_run(xps_loop_t *loop)
                 continue;
             }
 
+            if (curr_epoll_event.events & (EPOLLERR | EPOLLHUP))
+            {
+                logger(LOG_DEBUG, "handle_epoll_events()", "EVENT / error or hangup");
+                if (curr_event->close_cb != NULL)
+                    curr_event->close_cb(curr_event->ptr);
+                continue;
+            }
+
             if (curr_epoll_event.events & EPOLLIN)
             {
                 logger(LOG_DEBUG, "handle_epoll_events()", "EVENT / read");
-                if (curr_event->read_cb != NULL){
+                if (curr_event->read_cb != NULL)
+                {
                     // Pass the ptr from loop_event_t as a parameter to the callback
                     curr_event->read_cb(curr_event->ptr);
                 }
+                continue;
+            }
+
+            if (curr_epoll_event.events & EPOLLOUT)
+            {
+                logger(LOG_DEBUG, "handle_epoll_events()", "EVENT / write");
+                if (curr_event->write_cb != NULL)
+                    curr_event->write_cb(curr_event->ptr);
             }
         }
     }

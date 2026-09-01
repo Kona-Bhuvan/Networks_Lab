@@ -80,7 +80,7 @@ void xps_core_start(xps_core_t *core)
             logger(LOG_ERROR, "xps_start()", "xps_listener_create() failed for port %d", port);
             continue;
         }
-        logger(LOG_INFO, "xps_start()", "listener created for port %d", port);
+        logger(LOG_INFO, "xps_start()", "Server listening on http://%s:%d", host, port);
     }
 
     /* run loop instance using xps_loop_run() */

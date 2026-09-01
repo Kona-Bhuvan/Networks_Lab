@@ -11,12 +11,11 @@ int main()
     core = xps_core_create();
     
     xps_core_start(core);
-
-    return EXIT_SUCCESS;
 }
 
 void sigint_handler(int signum)
 {
+    printf("\n");
     logger(LOG_WARNING, "sigint_handler()", "SIGINT received");
 
     xps_core_destroy(core);
