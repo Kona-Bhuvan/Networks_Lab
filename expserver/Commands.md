@@ -151,9 +151,8 @@ gcc tcp_proxy.c -o tcp_proxy
 curl http://localhost:8080/
 ```
 
-```http
-http://localhost:8080/
-```
+[**`http://localhost:8080/`**](http://localhost:8080/)
+
 
 ---
 
@@ -287,6 +286,28 @@ nc localhost 8001
 
 ```bash
 htop
+```
+
+---
+
+# Stage 9: epoll Edge Triggered
+
+### Server
+
+```bash
+./xps
+```
+
+### *htop* utility
+
+```bash
+htop
+```
+
+### Client
+
+```bash
+nc localhost 8001
 ```
 
 ---
