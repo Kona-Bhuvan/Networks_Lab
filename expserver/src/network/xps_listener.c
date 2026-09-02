@@ -34,7 +34,7 @@ xps_listener_t *xps_listener_create(xps_core_t *core, const char *host, u_int po
         close(sock_fd);
         return NULL;
     }
-
+    
     // Binding to port
     if (bind(sock_fd, addr_info->ai_addr, addr_info->ai_addrlen) < 0)
     {
@@ -139,6 +139,8 @@ void listener_connection_handler(void *ptr)
             return;
         }
         client->listener = listener;
+
+        xps_pipe_create(listener->core, DEFAULT_PIPE_BUFF_THRESH, client->source, client->sink);
 
         logger(LOG_INFO, "xps_listener_connection_handler()", "new connection");
     }

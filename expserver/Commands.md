@@ -311,3 +311,19 @@ nc localhost 8001
 ```
 
 ---
+
+# Stage 10: Pipe Module
+
+### Server
+
+```bash
+./xps
+```
+
+### Client
+
+```bash
+nc localhost 8001
+```
+
+---
