@@ -185,7 +185,8 @@ void connection_source_handler(void *ptr)
 
     printf("[CLIENT MESSAGE] %s", buff->data);
 
-    // strrev((char *)buff->data);
+    if (connection->listener != NULL && connection->listener->port != 8001)
+        strrev((char *)buff->data);
 
     if (xps_pipe_source_write(connection->source, buff) != OK)
     {

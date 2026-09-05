@@ -21,7 +21,6 @@ xps_listener_t *xps_listener_create(xps_core_t *core, const char *host, u_int po
     if (setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
     {
         logger(LOG_ERROR, "xps_listener_create()", "setsockopt() failed");
-        perror("Error message");
         close(sock_fd);
         return NULL;
     }
@@ -34,12 +33,11 @@ xps_listener_t *xps_listener_create(xps_core_t *core, const char *host, u_int po
         close(sock_fd);
         return NULL;
     }
-    
+
     // Binding to port
     if (bind(sock_fd, addr_info->ai_addr, addr_info->ai_addrlen) < 0)
     {
         logger(LOG_ERROR, "xps_listener_create()", "failed to bind() to %s:%u", host, port);
-        perror("Error message");
         freeaddrinfo(addr_info); // Will be explained later
         close(sock_fd);
         return NULL;
@@ -50,7 +48,6 @@ xps_listener_t *xps_listener_create(xps_core_t *core, const char *host, u_int po
     if (listen(sock_fd, DEFAULT_BACKLOG) < 0)
     {
         logger(LOG_ERROR, "xps_listener_create()", "listen() failed");
-        perror("Error message");
         close(sock_fd);
         return NULL;
     }
@@ -138,10 +135,26 @@ void listener_connection_handler(void *ptr)
             close(conn_sock_fd);
             return;
         }
+
         client->listener = listener;
 
-        xps_pipe_create(listener->core, DEFAULT_PIPE_BUFF_THRESH, client->source, client->sink);
-
-        logger(LOG_INFO, "xps_listener_connection_handler()", "new connection");
+        if (listener->port == 8001)
+        {
+            xps_connection_t *connection = xps_upstream_create(listener->core, "127.0.0.1", 3000);
+            if(connection == NULL)
+            {
+                logger(LOG_ERROR, "xps_listener_connection_handler()", "xps_upstream_create() failed");
+                xps_connection_destroy(client);
+                return;
+            }
+            xps_pipe_create(listener->core, DEFAULT_PIPE_BUFF_THRESH, client->source, connection->sink);
+            xps_pipe_create(listener->core, DEFAULT_PIPE_BUFF_THRESH, connection->source, client->sink);
+        }
+        else
+        {
+            xps_pipe_create(listener->core, DEFAULT_PIPE_BUFF_THRESH, client->source, client->sink);
+        }
+        
+        logger(LOG_INFO, "xps_listener_connection_handler()", "created pipe for client connection on port %d", listener->port);
     }
 }

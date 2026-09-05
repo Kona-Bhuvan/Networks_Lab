@@ -327,3 +327,31 @@ nc localhost 8001
 ```
 
 ---
+
+# Stage 11: Upstream Module
+
+### Server - 8002, 8003, 8004 & Proxy - 8001
+
+```bash
+./xps
+```
+
+### Server - 8001
+
+```bash
+python3 -m http.server 3000
+```
+
+### Client
+
+```bash
+curl http://localhost:8001/
+```
+
+[**`http://localhost:8001/`**](http://localhost:8001/)
+
+```bash
+nc localhost 8002
+```
+
+---
