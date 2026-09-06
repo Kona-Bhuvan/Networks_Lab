@@ -44,8 +44,7 @@ int xps_pipe_attach_sink(xps_pipe_t *pipe, xps_pipe_sink_t *sink);
 int xps_pipe_detach_sink(xps_pipe_t *pipe);
 
 /* xps_pipe_source */
-xps_pipe_source_t *xps_pipe_source_create(void *ptr, xps_handler_t handler_cb,
-                                          xps_handler_t close_cb);
+xps_pipe_source_t *xps_pipe_source_create(void *ptr, xps_handler_t handler_cb, xps_handler_t close_cb);
 void xps_pipe_source_destroy(xps_pipe_source_t *source);
 int xps_pipe_source_write(xps_pipe_source_t *source, xps_buffer_t *buff);
 

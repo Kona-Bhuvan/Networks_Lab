@@ -14,6 +14,7 @@
 #include <signal.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <sys/stat.h>
 
 // 3rd party libraries
 #include "lib/vec/vec.h" // https://github.com/rxi/vec
@@ -21,7 +22,7 @@
 // Constants
 #define DEFAULT_BACKLOG 64
 #define MAX_EPOLL_EVENTS 32
-#define DEFAULT_BUFFER_SIZE 100000 // 100 KB
+#define DEFAULT_BUFFER_SIZE 100000       // 100 KB
 #define DEFAULT_PIPE_BUFF_THRESH 1000000 // 1 MB
 #define DEFAULT_NULLS_THRESH 32
 
@@ -60,11 +61,13 @@ typedef struct xps_buffer_list_s xps_buffer_list_t;
 typedef struct xps_pipe_s xps_pipe_t;
 typedef struct xps_pipe_source_s xps_pipe_source_t;
 typedef struct xps_pipe_sink_s xps_pipe_sink_t;
+typedef struct xps_keyval_s xps_keyval_t;
+typedef struct xps_file_s xps_file_t;
 
 // Function typedefs
 typedef void (*xps_handler_t)(void *ptr);
 
- // xps headers
+// xps headers
 #include "core/xps_core.h"
 #include "core/xps_loop.h"
 #include "core/xps_pipe.h"
@@ -74,5 +77,7 @@ typedef void (*xps_handler_t)(void *ptr);
 #include "utils/xps_utils.h"
 #include "utils/xps_buffer.h"
 #include "network/xps_upstream.h"
+#include "disc/xps_mime.h"
+#include "disc/xps_file.h"
 
 #endif

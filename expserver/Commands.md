@@ -355,3 +355,25 @@ nc localhost 8002
 ```
 
 ---
+
+# Stage 12: File Module
+
+### Server
+
+```bash
+./xps
+```
+
+### Client - file server ("../public/sample.txt")
+
+```bash
+nc localhost 8002
+```
+
+### Client - file server ("../temp/file.txt")
+
+```bash
+nc localhost 8003
+```
+
+---

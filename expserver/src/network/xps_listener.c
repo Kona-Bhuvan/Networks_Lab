@@ -141,7 +141,7 @@ void listener_connection_handler(void *ptr)
         if (listener->port == 8001)
         {
             xps_connection_t *connection = xps_upstream_create(listener->core, "127.0.0.1", 3000);
-            if(connection == NULL)
+            if (connection == NULL)
             {
                 logger(LOG_ERROR, "xps_listener_connection_handler()", "xps_upstream_create() failed");
                 xps_connection_destroy(client);
@@ -150,11 +150,36 @@ void listener_connection_handler(void *ptr)
             xps_pipe_create(listener->core, DEFAULT_PIPE_BUFF_THRESH, client->source, connection->sink);
             xps_pipe_create(listener->core, DEFAULT_PIPE_BUFF_THRESH, connection->source, client->sink);
         }
+        else if (listener->port == 8002)
+        {
+            int error;
+            xps_file_t *file = xps_file_create(listener->core, "../public/sample.txt", &error);
+            if (file == NULL)
+            {
+                logger(LOG_ERROR, "xps_listener_connection_handler()", "xps_file_create() failed");
+                xps_connection_destroy(client);
+                continue;
+            }
+            xps_pipe_create(listener->core, DEFAULT_PIPE_BUFF_THRESH, file->source, client->sink);
+        }
+        else if (listener->port == 8003)
+        {
+            /*File server with file path (../temp/file.txt) should run on port 8003*/
+            int error;
+            xps_file_t *file = xps_file_create(listener->core, "../temp/file.txt", &error);
+            if (file == NULL)
+            {
+                logger(LOG_ERROR, "xps_listener_connection_handler()", "xps_file_create() failed");
+                xps_connection_destroy(client);
+                continue;
+            }
+            xps_pipe_create(listener->core, DEFAULT_PIPE_BUFF_THRESH, file->source, client->sink);
+        }
         else
         {
             xps_pipe_create(listener->core, DEFAULT_PIPE_BUFF_THRESH, client->source, client->sink);
         }
-        
+
         logger(LOG_INFO, "xps_listener_connection_handler()", "created pipe for client connection on port %d", listener->port);
     }
 }
