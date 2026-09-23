@@ -128,58 +128,23 @@ void listener_connection_handler(void *ptr)
         make_socket_non_blocking(conn_sock_fd);
 
         /*Creating connection instance*/
-        xps_connection_t *client = xps_connection_create(listener->core, conn_sock_fd); // Will be implemented later
+        xps_connection_t *client = xps_connection_create(listener->core, conn_sock_fd);
         if (client == NULL)
         {
-            logger(LOG_ERROR, "xps_listener_connection_handler()", "xps_connection_create() failed");
+            logger(LOG_ERROR, "listener_connection_handler()", "xps_connection_create() failed");
             close(conn_sock_fd);
+            continue;
+        }
+        client->listener = listener;
+
+        xps_session_t *session = xps_session_create(listener->core, client);
+        if (session == NULL)
+        {
+            logger(LOG_ERROR, "listener_connection_handler()", "xps_session_create() failed");
+            xps_connection_destroy(client);
             return;
         }
 
-        client->listener = listener;
-
-        if (listener->port == 8001)
-        {
-            xps_connection_t *connection = xps_upstream_create(listener->core, "127.0.0.1", 3000);
-            if (connection == NULL)
-            {
-                logger(LOG_ERROR, "xps_listener_connection_handler()", "xps_upstream_create() failed");
-                xps_connection_destroy(client);
-                return;
-            }
-            xps_pipe_create(listener->core, DEFAULT_PIPE_BUFF_THRESH, client->source, connection->sink);
-            xps_pipe_create(listener->core, DEFAULT_PIPE_BUFF_THRESH, connection->source, client->sink);
-        }
-        else if (listener->port == 8002)
-        {
-            int error;
-            xps_file_t *file = xps_file_create(listener->core, "../public/sample.txt", &error);
-            if (file == NULL)
-            {
-                logger(LOG_ERROR, "xps_listener_connection_handler()", "xps_file_create() failed");
-                xps_connection_destroy(client);
-                continue;
-            }
-            xps_pipe_create(listener->core, DEFAULT_PIPE_BUFF_THRESH, file->source, client->sink);
-        }
-        else if (listener->port == 8003)
-        {
-            /*File server with file path (../temp/file.txt) should run on port 8003*/
-            int error;
-            xps_file_t *file = xps_file_create(listener->core, "../temp/file.txt", &error);
-            if (file == NULL)
-            {
-                logger(LOG_ERROR, "xps_listener_connection_handler()", "xps_file_create() failed");
-                xps_connection_destroy(client);
-                continue;
-            }
-            xps_pipe_create(listener->core, DEFAULT_PIPE_BUFF_THRESH, file->source, client->sink);
-        }
-        else
-        {
-            xps_pipe_create(listener->core, DEFAULT_PIPE_BUFF_THRESH, client->source, client->sink);
-        }
-
-        logger(LOG_INFO, "xps_listener_connection_handler()", "created pipe for client connection on port %d", listener->port);
+        logger(LOG_INFO, "xps_listener_connection_handler()", "created new connection on port %d", listener->port);
     }
 }

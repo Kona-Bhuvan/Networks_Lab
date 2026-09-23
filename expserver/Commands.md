@@ -377,3 +377,33 @@ nc localhost 8003
 ```
 
 ---
+
+# Stage 13: Session Module
+
+### Server
+
+```bash
+./xps
+```
+
+### Python Server - 8001
+
+```bash
+python3 -m http.server 3000
+```
+
+### Client - 8001
+
+```bash
+curl http://localhost:8001/
+```
+
+[**`http://localhost:8001/`**](http://localhost:8001/)
+
+### file ("../public/sample.txt") Client - 8002
+
+```bash
+nc localhost 8002
+```
+
+---

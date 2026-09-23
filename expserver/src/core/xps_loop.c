@@ -9,7 +9,7 @@ loop_event_t *loop_event_create(u_int fd, void *ptr, xps_handler_t read_cb, xps_
     assert(ptr != NULL);
 
     // Alloc memory for 'event' instance
-    loop_event_t *event = (loop_event_t*)malloc(sizeof(loop_event_t));
+    loop_event_t *event = (loop_event_t *)malloc(sizeof(loop_event_t));
     if (event == NULL)
     {
         logger(LOG_ERROR, "event_create()", "malloc() failed for 'event'");
@@ -189,7 +189,7 @@ void xps_loop_run(xps_loop_t *loop)
         logger(LOG_DEBUG, "xps_loop_run()", "epoll waiting");
 
         int n_events = epoll_wait(loop->epoll_fd, loop->epoll_events, MAX_EPOLL_EVENTS, timeout);
-        
+
         logger(LOG_DEBUG, "xps_loop_run()", "epoll wait over");
 
         if (n_events < 0)
@@ -295,6 +295,11 @@ void filter_nulls(xps_core_t *core)
     {
         vec_filter_null(&core->pipes);
         core->n_null_pipes = 0;
+    }
+    if (core->n_null_sessions > DEFAULT_NULLS_THRESH)
+    {
+        vec_filter_null(&core->sessions);
+        core->n_null_sessions = 0;
     }
 }
 
