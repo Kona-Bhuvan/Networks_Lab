@@ -11,17 +11,15 @@ xps_file_t *xps_file_create(xps_core_t *core, const char *file_path, int *error)
     *error = E_FAIL;
     /*check if file is inside the public directory*/
     char *resolved_path = realpath(file_path, NULL);
-    char *resolved_public = realpath("../public", NULL);
     /*find realpath of "../public"*/
+    char *resolved_public = realpath("../public", NULL);
 
     if (resolved_path == NULL || resolved_public == NULL)
     {
         logger(LOG_ERROR, "xps_file_create()", "realpath() failed");
-        /*free both path*/
+        *error = E_NOTFOUND;
         free(resolved_path);
         free(resolved_public);
-        /*close file object*/
-
         return NULL;
     }
 
@@ -30,14 +28,11 @@ xps_file_t *xps_file_create(xps_core_t *core, const char *file_path, int *error)
     {
         logger(LOG_WARNING, "xps_file_create()", "file requested is outside of public directory");
         *error = E_PERMISSION;
-        /*free both path*/
         free(resolved_path);
         free(resolved_public);
-        /*close file object*/
         return NULL;
     }
 
-    /*free both path*/
     free(resolved_path);
     free(resolved_public);
 
@@ -47,7 +42,7 @@ xps_file_t *xps_file_create(xps_core_t *core, const char *file_path, int *error)
     {
         logger(LOG_ERROR, "xps_file_create()", "stat() failed");
         perror("Error message");
-        /*close file object*/
+        *error = E_NOTFOUND;
         return NULL;
     }
 
@@ -55,7 +50,6 @@ xps_file_t *xps_file_create(xps_core_t *core, const char *file_path, int *error)
     {
         logger(LOG_WARNING, "xps_file_create()", "others do not have read permission");
         *error = E_PERMISSION;
-        /*close file object*/
         return NULL;
     }
 
@@ -95,10 +89,16 @@ xps_file_t *xps_file_create(xps_core_t *core, const char *file_path, int *error)
         return NULL;
     }
 
-    /*Alloc memory for instance of xps_file_t*/
     xps_file_t *file = (xps_file_t *)malloc(sizeof(xps_file_t));
+    if (file == NULL)
+    {
+        logger(LOG_ERROR, "xps_file_create()", "malloc() failed for 'file'");
+        fclose(file_struct);
+        return NULL;
+    }
+    
     xps_pipe_source_t *source = xps_pipe_source_create((void *)file, file_source_handler, file_source_close_handler);
-    /*if source is null, close file_struct and return*/
+
     if (source == NULL)
     {
         logger(LOG_ERROR, "xps_file_create()", "xps_pipe_source_create() failed");
@@ -107,15 +107,21 @@ xps_file_t *xps_file_create(xps_core_t *core, const char *file_path, int *error)
         return NULL;
     }
 
-    // Init values
     source->ready = true;
-    /*initialise the fields of file instance*/
     file->core = core;
-    file->file_path = file_path;
     file->source = source;
     file->file_struct = file_struct;
     file->size = (size_t)temp_size;
     file->mime_type = mime_type;
+    file->file_path = strdup(file_path);
+    if(file->file_path == NULL)
+    {
+        logger(LOG_ERROR, "xps_file_create()", "strdup() failed for 'file_path'");
+        fclose(file_struct);
+        xps_pipe_source_destroy(source);
+        free(file);
+        return NULL;
+    }
 
     *error = OK;
 
@@ -126,14 +132,13 @@ xps_file_t *xps_file_create(xps_core_t *core, const char *file_path, int *error)
 
 void xps_file_destroy(xps_file_t *file)
 {
-    /*assert*/
     assert(file != NULL);
-    assert(file->file_struct != NULL);
-    assert(file->source != NULL);
 
-    /*Closes the file, destroys the associated pipe source, and frees the memory allocated for the file structure.*/
-    fclose(file->file_struct);
-    xps_pipe_source_destroy(file->source);
+    free((void *)file->file_path);
+    if (file->file_struct != NULL)
+        fclose(file->file_struct);
+    if (file->source != NULL)
+        xps_pipe_source_destroy(file->source);
     free(file);
 
     logger(LOG_DEBUG, "xps_file_destroy()", "destroyed file struct");
@@ -141,11 +146,9 @@ void xps_file_destroy(xps_file_t *file)
 
 void file_source_handler(void *ptr)
 {
-    /*assert*/
     assert(ptr != NULL);
 
     xps_pipe_source_t *source = ptr;
-    /*get file from source ptr*/
     xps_file_t *file = (xps_file_t *)source->ptr;
     assert(file != NULL);
     assert(file->file_struct != NULL);
@@ -166,7 +169,8 @@ void file_source_handler(void *ptr)
     if (ferror(file->file_struct))
     {
         logger(LOG_ERROR, "file_source_handler()", "fread() failed");
-        xps_file_destroy(file);
+        xps_buffer_destroy(buff);
+        source->ready = false;
         return;
     }
 
@@ -174,23 +178,20 @@ void file_source_handler(void *ptr)
     if (read_n == 0 && feof(file->file_struct))
     {
         logger(LOG_INFO, "file_source_handler()", "end of file reached");
-        xps_file_destroy(file);
+        xps_buffer_destroy(buff);
+        source->ready = false;
         return;
     }
 
-    /*Write to pipe form buff*/
     xps_pipe_source_write(source, buff);
-    /*deallocate buff*/
     xps_buffer_destroy(buff);
 }
 
 void file_source_close_handler(void *ptr)
 {
-    /*assert*/
     assert(ptr != NULL);
     xps_pipe_source_t *source = ptr;
-    /*get file from source ptr*/
+
     xps_file_t *file = (xps_file_t *)source->ptr;
-    /*deallocate file object*/
     xps_file_destroy(file);
 }

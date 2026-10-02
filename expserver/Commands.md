@@ -407,3 +407,19 @@ nc localhost 8002
 ```
 
 ---
+
+# Stage 14: HTTP Request Module
+
+### Server
+
+```bash
+./xps
+```
+
+### Client
+
+[**http://localhost:8001/sample.txt**](http://localhost:8001/sample.txt)
+
+[**http://localhost:8001/image.jpg**](http://localhost:8001/image.jpg)
+
+---

@@ -13,6 +13,24 @@ xps_keyval_t mime_types[] = {
     {".txt", "text/plain"},
     {".png", "image/png"},
     {".png", "image/x-png"},
+    {".jpg", "image/jpeg"},
+    {".jpeg", "image/jpeg"},
+    {".gif", "image/gif"},
+    {".bmp", "image/bmp"},
+    {".ico", "image/x-icon"},
+    {".tif", "image/tiff"},
+    {".tiff", "image/tiff"},
+    {".js", "application/javascript"},
+    {".css", "text/css"},
+    {".html", "text/html"},
+    {".htm", "text/html"},
+    {".xml", "application/xml"},
+    {".pdf", "application/pdf"},
+    {".zip", "application/zip"},
+    {".tar", "application/x-tar"},
+    {".gz", "application/gzip"},
+    {".rar", "application/vnd.rar"},
+    {".7z", "application/x-7z-compressed"}
 };
 
 int n_mimes = sizeof(mime_types) / sizeof(mime_types[0]);
