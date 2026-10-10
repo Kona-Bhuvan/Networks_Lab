@@ -423,3 +423,35 @@ nc localhost 8002
 [**http://localhost:8001/image.jpg**](http://localhost:8001/image.jpg)
 
 ---
+
+# Stage 14: HTTP Request Module
+
+### Server
+
+```bash
+./xps
+```
+
+### Client
+
+[**http://localhost:8001/sample.txt**](http://localhost:8001/sample.txt)
+
+[**http://localhost:8001/image.jpg**](http://localhost:8001/image.jpg)
+
+---
+
+# Stage 15: HTTP Response Module
+
+```bash
+./xps
+```
+
+### Client
+
+[**http://localhost:8001/sample.txt**](http://localhost:8001/sample.txt)
+
+[**http://localhost:8001/image.jpg**](http://localhost:8001/image.jpg)
+
+Check in `Inspect` &rarr; `Networks` for **HTTP Response**
+
+---

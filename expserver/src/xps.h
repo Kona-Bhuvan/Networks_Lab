@@ -15,6 +15,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <time.h>
 
 // 3rd party libraries
 #include "lib/vec/vec.h" // https://github.com/rxi/vec
@@ -25,6 +26,9 @@
 #define DEFAULT_BUFFER_SIZE 100000       // 100 KB
 #define DEFAULT_PIPE_BUFF_THRESH 1000000 // 1 MB
 #define DEFAULT_NULLS_THRESH 32
+
+// Names
+#define SERVER_NAME "eXpServer"
 
 // Error constants
 #define OK 0            // Success
@@ -65,6 +69,7 @@ typedef struct xps_keyval_s xps_keyval_t;
 typedef struct xps_file_s xps_file_t;
 typedef struct xps_session_s xps_session_t;
 typedef struct xps_http_req_s xps_http_req_t;
+typedef struct xps_http_res_s xps_http_res_t;
 
 // Function typedefs
 typedef void (*xps_handler_t)(void *ptr);
@@ -84,5 +89,6 @@ typedef void (*xps_handler_t)(void *ptr);
 #include "core/xps_session.h"
 #include "http/xps_http.h"
 #include "http/xps_http_req.h"
+#include "http/xps_http_res.h"
 
 #endif

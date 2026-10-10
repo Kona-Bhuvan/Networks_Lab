@@ -544,10 +544,10 @@ xps_buffer_t *xps_http_serialize_headers(vec_void_t *headers)
         xps_keyval_t *header = headers->data[i];
         size_t header_str_len = strlen(header->key) + strlen(header->val) + 5; // +5 for ':', ' ', '\r', '\n' and '\0'
         char header_str[header_str_len];
-        sprintf(header_str, "%s: %s\n", header->key, header->val);
+        sprintf(header_str, "%s: %s\r\n", header->key, header->val);
         if ((buff->size - buff->len) < header_str_len)
         {                                                     // buffer is small
-            u_char *new_data = realloc(buff, 2 * buff->size); /*realloc() buffer to twice size*/
+            u_char *new_data = realloc(buff->data, 2 * buff->size); /*realloc() buffer to twice size*/
             /*handle error*/
             if (new_data == NULL)
             {
@@ -564,4 +564,41 @@ xps_buffer_t *xps_http_serialize_headers(vec_void_t *headers)
     logger(LOG_DEBUG, "xps_http_serialize_headers()", "serialized headers into buffer");
 
     return buff;
+}
+
+int xps_http_set_header(vec_void_t *headers, const char *key, const char *val)
+{
+    /* Validate params */
+    assert(headers != NULL);
+    assert(key != NULL);
+    assert(val != NULL);
+
+    xps_keyval_t *header = malloc(sizeof(xps_keyval_t));
+    if (header == NULL)
+    {
+        logger(LOG_ERROR, "xps_http_set_header()", "malloc() failed for 'header'");
+        return E_FAIL;
+    }
+
+    /* allocate memory for header->key and header->val */
+    header->key = malloc(strlen(key) + 1);
+    header->val = malloc(strlen(val) + 1);
+
+    if (header->key == NULL || header->val == NULL)
+    {
+        free(header->key);
+        free(header->val);
+        free(header);
+        logger(LOG_ERROR, "xps_http_set_header()", "malloc() failed for 'header->key' or 'header->val'");
+        return E_FAIL;
+    }
+
+    /* copy contents of key and value given into the header fields */
+    strcpy(header->key, key);
+    strcpy(header->val, val);
+
+    /* add the header to header list */
+    vec_push(headers, header);
+
+    return OK;
 }
