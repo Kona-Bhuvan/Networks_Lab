@@ -94,6 +94,8 @@ void xps_config_destroy(xps_config_t *config)
                 {
                     vec_deinit(&(route->index));
                     vec_deinit(&(route->upstreams));
+                    vec_deinit(&(route->ip_whitelist));
+                    vec_deinit(&(route->ip_blacklist));
                     free(route);
                 }
             }
@@ -222,13 +224,15 @@ xps_config_lookup_t *xps_config_lookup(xps_config_t *config, xps_http_req_t *htt
         return NULL;
     }
 
-    vec_init(&(lookup->ip_whitelist));
-    vec_init(&(lookup->ip_blacklist));
     lookup->file_path = NULL;
     lookup->dir_path = NULL;
     lookup->upstream = NULL;
     lookup->redirect_url = NULL;
     lookup->http_status_code = 0;
+    vec_init(&(lookup->ip_whitelist));
+    vec_init(&(lookup->ip_blacklist));
+    vec_extend(&(lookup->ip_whitelist), &(route->ip_whitelist));
+    vec_extend(&(lookup->ip_blacklist), &(route->ip_blacklist));
 
     if (strcmp(route->type, "file_serve") == 0)
     {
@@ -336,8 +340,10 @@ void xps_config_lookup_destroy(xps_config_lookup_t *config_lookup, xps_core_t *c
     assert(config_lookup != NULL);
     assert(core != NULL);
 
-    if (config_lookup->file_path) free(config_lookup->file_path);
-    if (config_lookup->dir_path) free(config_lookup->dir_path);
+    if (config_lookup->file_path)
+        free(config_lookup->file_path);
+    if (config_lookup->dir_path)
+        free(config_lookup->dir_path);
 
     vec_deinit(&(config_lookup->ip_whitelist));
     vec_deinit(&(config_lookup->ip_blacklist));
@@ -401,6 +407,8 @@ xps_config_route_t *parse_route(JSON_Object *route_object)
 
     vec_init(&route->index);
     vec_init(&route->upstreams);
+    vec_init(&route->ip_whitelist);
+    vec_init(&route->ip_blacklist);
 
     route->req_path = json_object_get_string(route_object, "req_path");
     route->type = json_object_get_string(route_object, "type");
@@ -441,6 +449,36 @@ xps_config_route_t *parse_route(JSON_Object *route_object)
             logger(LOG_ERROR, "parse_route", "Redirect route must have a redirect_url");
             free(route);
             return NULL;
+        }
+    }
+
+    JSON_Array *ip_whitelist = json_object_get_array(route_object, "ip_whitelist");
+    JSON_Array *ip_blacklist = json_object_get_array(route_object, "ip_blacklist");
+
+    if (ip_whitelist && !ip_blacklist)
+    {
+        for (size_t i = 0; i < json_array_get_count(ip_whitelist); i++)
+            vec_push(&(route->ip_whitelist), (void *)json_array_get_string(ip_whitelist, i));
+    }
+    else if (!ip_whitelist && ip_blacklist)
+    {
+        for (size_t i = 0; i < json_array_get_count(ip_blacklist); i++)
+            vec_push(&(route->ip_blacklist), (void *)json_array_get_string(ip_blacklist, i));
+    }
+    else if (ip_whitelist && ip_blacklist)
+    {
+        for (size_t i = 0; i < json_array_get_count(ip_whitelist); i++)
+        {
+            const char *whitelisted_ip = json_array_get_string(ip_whitelist, i);
+            bool flag = false;
+            for (size_t j = 0; j < json_array_get_count(ip_blacklist); j++)
+                if (strcmp(whitelisted_ip, json_array_get_string(ip_blacklist, j)) == 0)
+                {
+                    flag = true;
+                    break;
+                }
+            if (!flag)
+                vec_push(&(route->ip_whitelist), (void *)whitelisted_ip);
         }
     }
 

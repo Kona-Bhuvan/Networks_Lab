@@ -440,6 +440,45 @@ void session_process_request(xps_session_t *session)
 
     session->config_lookup = lookup;
 
+    if (lookup->ip_whitelist.length > 0)
+    {
+        const char *client_ip = session->client->remote_ip;
+        bool is_allowed = false;
+        for (size_t i = 0; i < lookup->ip_whitelist.length; i++)
+        {
+            const char *ip_w = lookup->ip_whitelist.data[i];
+            if (strcmp(client_ip, ip_w) == 0)
+            {
+                is_allowed = true;
+                break;
+            }
+        }
+        if (!is_allowed)
+        {
+            logger(LOG_DEBUG, "session_process_request()", "client ip %s is not whitelisted", client_ip);
+            session_send_response(session, HTTP_FORBIDDEN, 0, "text/html", NULL);
+            xps_config_lookup_destroy(lookup, session->core);
+            return;
+        }
+    }
+
+    // check in blacklist
+    if (lookup->ip_blacklist.length > 0)
+    {
+        const char *client_ip = session->client->remote_ip;
+        for (size_t i = 0; i < lookup->ip_blacklist.length; i++)
+        {
+            const char *ip_b = lookup->ip_blacklist.data[i];
+            if (strcmp(client_ip, ip_b) == 0)
+            {
+                logger(LOG_DEBUG, "session_process_request()", "client ip %s is blacklisted", client_ip);
+                session_send_response(session, HTTP_FORBIDDEN, 0, "text/html", NULL);
+                xps_config_lookup_destroy(lookup, session->core);
+                return;
+            }
+        }
+    }
+
     if (lookup->type == REQ_FILE_SERVE)
     {
         if (lookup->dir_path != NULL)
@@ -461,6 +500,7 @@ void session_process_request(xps_session_t *session)
             int file_error = 0;
             xps_file_t *file = xps_file_create(session->core, lookup->file_path, &file_error);
             session->file = file;
+            printf("[Experiment] Serving file: %s | Size: %zu bytes\n", lookup->file_path, session->file->size);
             if (file_error == E_NOTFOUND)
             {
                 session_send_response(session, HTTP_NOT_FOUND, 0, "text/html", NULL);
@@ -572,7 +612,7 @@ int session_send_response(xps_session_t *session, u_int code, size_t content_len
         return E_FAIL;
     }
 
-    if(body != NULL)
+    if (body != NULL)
         response->body = body;
 
     xps_buffer_t *serialized = xps_http_res_serialize(response);

@@ -424,22 +424,6 @@ nc localhost 8002
 
 ---
 
-# Stage 14: HTTP Request Module
-
-### Server
-
-```bash
-./xps
-```
-
-### Client
-
-[**http://localhost:8001/sample.txt**](http://localhost:8001/sample.txt)
-
-[**http://localhost:8001/image.jpg**](http://localhost:8001/image.jpg)
-
----
-
 # Stage 15: HTTP Response Module
 
 ### Server
@@ -486,7 +470,7 @@ Modify `xps_config.json` for changing server configuration
 
 ---
 
-### Stage 17: Directory Browsing
+# Stage 17: Directory Browsing
 
 ### Server
 
@@ -509,5 +493,25 @@ python3 -m http.server 3000
 ### Client
 
 [**http://localhost:8002/**](http://localhost:8002/)
+
+---
+
+# Stage 18: IP Whitelist/Blacklist
+
+### Server
+
+```bash
+./xps xps_config.json
+```
+
+### Client
+
+```bash
+curl --interface 127.0.0.2 -i http://0.0.0.0:8004/
+```
+
+```bash
+curl -I http://localhost:8001/large.txt
+```
 
 ---
