@@ -23,6 +23,14 @@ xps_http_res_t *xps_http_res_create(xps_core_t *core, u_int code)
     {
         snprintf(http_res->response_line, sizeof(http_res->response_line), "HTTP/1.1 200 OK");
     }
+    else if (code == HTTP_MOVED_PERMANENTLY)
+    {
+        snprintf(http_res->response_line, sizeof(http_res->response_line), "HTTP/1.1 301 Moved Permanently");
+    }
+    else if (code == HTTP_MOVED_TEMPORARILY)
+    {
+        snprintf(http_res->response_line, sizeof(http_res->response_line), "HTTP/1.1 302 Moved Temporarily");
+    }
     else if (code == HTTP_BAD_REQUEST)
     {
         snprintf(http_res->response_line, sizeof(http_res->response_line), "HTTP/1.1 400 Bad Request");
@@ -38,6 +46,10 @@ xps_http_res_t *xps_http_res_create(xps_core_t *core, u_int code)
     else if (code == HTTP_INTERNAL_SERVER_ERROR)
     {
         snprintf(http_res->response_line, sizeof(http_res->response_line), "HTTP/1.1 500 Internal Server Error");
+    }
+    else if (code == HTTP_BAD_GATEWAY)
+    {
+        snprintf(http_res->response_line, sizeof(http_res->response_line), "HTTP/1.1 502 Bad Gateway");
     }
     else
     {

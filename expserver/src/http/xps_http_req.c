@@ -112,20 +112,24 @@ xps_buffer_t *xps_http_req_serialize(xps_http_req_t *http_req)
     /* Serialize headers into a buffer headers_str*/
     xps_buffer_t *headers_str = xps_http_serialize_headers(&http_req->headers);
     
-    size_t final_len = strlen(http_req->request_line) + 1 + headers_str->len + 1; /*Calculate length for final buffer*/
+    size_t final_len = strlen(http_req->request_line) + 2 + headers_str->len + 2; /*Calculate length for final buffer*/
     /*Create instance for final buffer*/
     xps_buffer_t *buff = xps_buffer_create(final_len, 0, NULL);
 
     /*Copy everything to final buffer*/
     memcpy(buff->pos, http_req->request_line, strlen(http_req->request_line));
     buff->pos += strlen(http_req->request_line);
-    /*similarly copy "\n", headers_str, "\n"*/
-    memcpy(buff->pos, "\n", 1);
-    buff->pos += 1;
+    
+    memcpy(buff->pos, "\r\n", 2);
+    buff->pos += 2;
+
     memcpy(buff->pos, headers_str->data, headers_str->len);
     buff->pos += headers_str->len;
-    memcpy(buff->pos, "\n", 1);
-    buff->pos += 1;
+    
+    memcpy(buff->pos, "\r\n", 2);
+    buff->pos += 2;
+
+    buff->len = final_len;
 
     /*destroy headers_str buffer*/
     xps_buffer_destroy(headers_str);

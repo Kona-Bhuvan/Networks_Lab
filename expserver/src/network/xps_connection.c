@@ -29,6 +29,8 @@ xps_connection_t *xps_connection_create(xps_core_t *core, u_int sock_fd)
         return NULL;
     }
 
+    connection->remote_ip = NULL;
+
     /*Create source instance*/
     xps_pipe_source_t *source = xps_pipe_source_create(connection, connection_source_handler, connection_source_close_handler);
     if (source == NULL)

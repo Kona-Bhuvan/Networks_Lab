@@ -442,6 +442,8 @@ nc localhost 8002
 
 # Stage 15: HTTP Response Module
 
+### Server
+
 ```bash
 ./xps
 ```
@@ -453,5 +455,33 @@ nc localhost 8002
 [**http://localhost:8001/image.jpg**](http://localhost:8001/image.jpg)
 
 Check in `Inspect` &rarr; `Networks` for **HTTP Response**
+
+---
+
+# Stage 16: Config Module 
+
+### Server
+
+```bash
+./xps xps_config.json
+```
+
+```bash
+python3 -m http.server 3000
+```
+
+### Client
+
+[**http://localhost:8001/**](http://localhost:8001/)
+
+[**http://localhost:8001/image.jpg**](http://localhost:8001/image.jpg)
+
+[**http://localhost:8001/redirect**](http://localhost:8001/redirect)
+
+[**http://localhost:8002/**](http://localhost:8002/)
+
+[**http://localhost:8003/**](http://localhost:8003/)
+
+Modify `xps_config.json` for changing server configuration
 
 ---
