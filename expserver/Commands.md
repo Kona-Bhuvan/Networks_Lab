@@ -485,3 +485,29 @@ python3 -m http.server 3000
 Modify `xps_config.json` for changing server configuration
 
 ---
+
+### Stage 17: Directory Browsing
+
+### Server
+
+```bash
+./xps xps_config.json
+```
+
+### Client
+
+[**http://localhost:8001/**](http://localhost:8001/)
+
+[**http://localhost:8004/**](http://localhost:8004/)
+
+### Server
+
+```bash
+python3 -m http.server 3000
+```
+
+### Client
+
+[**http://localhost:8002/**](http://localhost:8002/)
+
+---

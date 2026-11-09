@@ -128,13 +128,16 @@ xps_buffer_t *xps_http_res_serialize(xps_http_res_t *http_res)
     buff->pos += strlen(http_res->response_line);
     *(buff->pos++) = '\r';
     *(buff->pos++) = '\n';
+
     /* copy headers */
     memcpy(buff->pos, headers_str->data, headers_str->len);
     buff->pos += headers_str->len;
     *(buff->pos++) = '\r';
     *(buff->pos++) = '\n';
+
     /* copy response body*/
     memcpy(buff->pos, http_res->body->data, http_res->body->len);
+    buff->pos += http_res->body->len;
 
     xps_buffer_destroy(headers_str);
 

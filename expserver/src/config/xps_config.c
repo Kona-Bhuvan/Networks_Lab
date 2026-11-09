@@ -288,9 +288,6 @@ xps_config_lookup_t *xps_config_lookup(xps_config_t *config, xps_http_req_t *htt
             return NULL;
         }
 
-        // is file
-        lookup->dir_path = route->dir_path ? str_create(route->dir_path) : NULL;
-
         if (is_file(resource_path))
         {
             lookup->file_path = resource_path;
@@ -313,11 +310,7 @@ xps_config_lookup_t *xps_config_lookup(xps_config_t *config, xps_http_req_t *htt
             }
             if (!index_file_found)
             {
-                /*no index file so free the resource_path*/
-                *error = E_NOTFOUND;
-                free(resource_path);
-                free(lookup);
-                return NULL;
+                lookup->dir_path = resource_path;
             }
         }
         else

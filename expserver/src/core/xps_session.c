@@ -16,7 +16,7 @@ void set_to_client_buff(xps_session_t *session, xps_buffer_t *buff);
 void set_from_client_buff(xps_session_t *session, xps_buffer_t *buff);
 void session_check_destroy(xps_session_t *session);
 void session_process_request(xps_session_t *session);
-int session_send_response(xps_session_t *session, u_int code, size_t content_length, const char *content_type);
+int session_send_response(xps_session_t *session, u_int code, size_t content_length, const char *content_type, xps_buffer_t *body);
 
 xps_session_t *xps_session_create(xps_core_t *core, xps_connection_t *client)
 {
@@ -428,11 +428,11 @@ void session_process_request(xps_session_t *session)
     if (error != OK)
     {
         if (error == E_NOTFOUND)
-            session_send_response(session, HTTP_NOT_FOUND, 0, "text/html");
+            session_send_response(session, HTTP_NOT_FOUND, 0, "text/html", NULL);
         else if (error == E_PERMISSION)
-            session_send_response(session, HTTP_FORBIDDEN, 0, "text/html");
+            session_send_response(session, HTTP_FORBIDDEN, 0, "text/html", NULL);
         else
-            session_send_response(session, HTTP_INTERNAL_SERVER_ERROR, 0, "text/html");
+            session_send_response(session, HTTP_INTERNAL_SERVER_ERROR, 0, "text/html", NULL);
         if (lookup)
             xps_config_lookup_destroy(lookup, session->core);
         return;
@@ -442,44 +442,63 @@ void session_process_request(xps_session_t *session)
 
     if (lookup->type == REQ_FILE_SERVE)
     {
-        int file_error = 0;
-        xps_file_t *file = xps_file_create(session->core, lookup->file_path, &file_error);
-        session->file = file;
-        if (file_error == E_NOTFOUND)
+        if (lookup->dir_path != NULL)
         {
-            session_send_response(session, HTTP_NOT_FOUND, 0, "text/html");
+            xps_buffer_t *dir_html = xps_directory_browsing(lookup->dir_path, session->http_req->path);
+            if (dir_html == NULL)
+            {
+                logger(LOG_ERROR, "session_process_request()", "xps_directory_browsing() failed");
+                session_send_response(session, HTTP_INTERNAL_SERVER_ERROR, 0, "text/html", NULL);
+                xps_config_lookup_destroy(lookup, session->core);
+                return;
+            }
+            session_send_response(session, HTTP_OK, dir_html->len, "text/html", dir_html);
             xps_config_lookup_destroy(lookup, session->core);
             return;
         }
-        else if (file_error == E_PERMISSION)
+        else
         {
-            session_send_response(session, HTTP_FORBIDDEN, 0, "text/html");
-            xps_config_lookup_destroy(lookup, session->core);
-            return;
-        }
-        else if (file_error != OK)
-        {
-            session_send_response(session, HTTP_INTERNAL_SERVER_ERROR, 0, "text/html");
-            xps_config_lookup_destroy(lookup, session->core);
-            return;
-        }
+            int file_error = 0;
+            xps_file_t *file = xps_file_create(session->core, lookup->file_path, &file_error);
+            session->file = file;
+            if (file_error == E_NOTFOUND)
+            {
+                session_send_response(session, HTTP_NOT_FOUND, 0, "text/html", NULL);
+                xps_config_lookup_destroy(lookup, session->core);
+                return;
+            }
+            else if (file_error == E_PERMISSION)
+            {
+                session_send_response(session, HTTP_FORBIDDEN, 0, "text/html", NULL);
+                xps_config_lookup_destroy(lookup, session->core);
+                return;
+            }
+            else if (file_error != OK)
+            {
+                session_send_response(session, HTTP_INTERNAL_SERVER_ERROR, 0, "text/html", NULL);
+                xps_config_lookup_destroy(lookup, session->core);
+                return;
+            }
 
-        if (session_send_response(session, HTTP_OK, session->file->size, session->file->mime_type) != OK)
-        {
+            if (session_send_response(session, HTTP_OK, session->file->size, session->file->mime_type, NULL) != OK)
+            {
+                xps_config_lookup_destroy(lookup, session->core);
+                return;
+            }
+
+            xps_pipe_create(session->core, DEFAULT_PIPE_BUFF_THRESH, session->file->source, session->file_sink);
             xps_config_lookup_destroy(lookup, session->core);
             return;
         }
-
-        xps_pipe_create(session->core, DEFAULT_PIPE_BUFF_THRESH, session->file->source, session->file_sink);
     }
     else if (lookup->type == REQ_REVERSE_PROXY)
     {
         char host[256];
         u_int port;
-        if(sscanf(lookup->upstream, "%[^:]:%u", host, &port) != 2)
+        if (sscanf(lookup->upstream, "%[^:]:%u", host, &port) != 2)
         {
             logger(LOG_ERROR, "session_process_request()", "Invalid upstream format: %s", lookup->upstream);
-            session_send_response(session, HTTP_BAD_GATEWAY, 0, "text/html");
+            session_send_response(session, HTTP_BAD_GATEWAY, 0, "text/html", NULL);
             xps_config_lookup_destroy(lookup, session->core);
             return;
         }
@@ -488,7 +507,7 @@ void session_process_request(xps_session_t *session)
         if (upstream == NULL)
         {
             logger(LOG_ERROR, "session_process_request()", "xps_upstream_create() failed for upstream %s", lookup->upstream);
-            session_send_response(session, HTTP_BAD_GATEWAY, 0, "text/html");
+            session_send_response(session, HTTP_BAD_GATEWAY, 0, "text/html", NULL);
             xps_config_lookup_destroy(lookup, session->core);
             return;
         }
@@ -501,7 +520,7 @@ void session_process_request(xps_session_t *session)
     else if (lookup->type == REQ_REDIRECT)
     {
         xps_http_res_t *http_res = xps_http_res_create(session->core, lookup->http_status_code);
-        if(http_res == NULL)
+        if (http_res == NULL)
         {
             logger(LOG_ERROR, "session_process_request()", "xps_http_res_create() failed");
             xps_config_lookup_destroy(lookup, session->core);
@@ -537,7 +556,7 @@ void session_process_request(xps_session_t *session)
     }
 }
 
-int session_send_response(xps_session_t *session, u_int code, size_t content_length, const char *content_type)
+int session_send_response(xps_session_t *session, u_int code, size_t content_length, const char *content_type, xps_buffer_t *body)
 {
     xps_http_res_t *response = xps_http_res_create(session->core, code);
     if (response == NULL)
@@ -552,6 +571,9 @@ int session_send_response(xps_session_t *session, u_int code, size_t content_len
         xps_http_res_destroy(response);
         return E_FAIL;
     }
+
+    if(body != NULL)
+        response->body = body;
 
     xps_buffer_t *serialized = xps_http_res_serialize(response);
     xps_http_res_destroy(response);
