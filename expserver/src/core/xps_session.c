@@ -500,7 +500,6 @@ void session_process_request(xps_session_t *session)
             int file_error = 0;
             xps_file_t *file = xps_file_create(session->core, lookup->file_path, &file_error);
             session->file = file;
-            printf("[Experiment] Serving file: %s | Size: %zu bytes\n", lookup->file_path, session->file->size);
             if (file_error == E_NOTFOUND)
             {
                 session_send_response(session, HTTP_NOT_FOUND, 0, "text/html", NULL);
@@ -519,6 +518,8 @@ void session_process_request(xps_session_t *session)
                 xps_config_lookup_destroy(lookup, session->core);
                 return;
             }
+
+            printf("[Experiment] Serving file: %s | Size: %zu bytes\n", lookup->file_path, session->file->size);
 
             if (session_send_response(session, HTTP_OK, session->file->size, session->file->mime_type, NULL) != OK)
             {

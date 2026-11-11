@@ -62,7 +62,7 @@ xps_buffer_t *xps_directory_browsing(const char *dir_path, const char *pathname)
         // get information about the file
         if (fstat(file_fd, &file_stat) == -1)
         {
-            logger(LOG_ERROR, "xps_directory_browsing()", "fstat()");
+            logger(LOG_ERROR, "xps_directory_browsing()", "fstat() failed");
             close(file_fd);
             continue;
         }
@@ -91,10 +91,10 @@ xps_buffer_t *xps_directory_browsing(const char *dir_path, const char *pathname)
                     buff + strlen(buff),
                     "<tr><td><a href='%s/%s'>%s%s</a></td><td></td></tr>\n",
                     temp_pathname, dir_entry->d_name, dir_entry->d_name, is_dir);
+                    
             free(temp_pathname);
         }
-
-        /*close the file*/
+        
         close(file_fd);
     }
 

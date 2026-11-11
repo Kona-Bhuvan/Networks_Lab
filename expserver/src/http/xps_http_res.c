@@ -29,7 +29,7 @@ xps_http_res_t *xps_http_res_create(xps_core_t *core, u_int code)
     }
     else if (code == HTTP_MOVED_TEMPORARILY)
     {
-        snprintf(http_res->response_line, sizeof(http_res->response_line), "HTTP/1.1 302 Moved Temporarily");
+        snprintf(http_res->response_line, sizeof(http_res->response_line), "HTTP/1.1 302 Found");
     }
     else if (code == HTTP_BAD_REQUEST)
     {

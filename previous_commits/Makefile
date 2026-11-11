@@ -1,7 +1,7 @@
 REPO   = https://github.com/Kona-Bhuvan/Networks_Lab.git
 FOLDER = expserver
 TMP    = .pull_tmp
-COMMIT ?=
+COMMIT ?= 
 
 .PHONY: pull clean
 

@@ -30,6 +30,7 @@ xps_connection_t *xps_connection_create(xps_core_t *core, u_int sock_fd)
     }
 
     connection->remote_ip = NULL;
+    connection->closing = false;
 
     /*Create source instance*/
     xps_pipe_source_t *source = xps_pipe_source_create(connection, connection_source_handler, connection_source_close_handler);
@@ -77,6 +78,10 @@ xps_connection_t *xps_connection_create(xps_core_t *core, u_int sock_fd)
 void xps_connection_destroy(xps_connection_t *connection)
 {
     assert(connection != NULL);
+
+    if (connection->closing)
+        return;
+    connection->closing = true;
 
     /* set connection to NULL in 'connections' list */
     for (int i = 0; i < connection->core->connections.length; i++)
@@ -279,6 +284,8 @@ void connection_close(xps_connection_t *connection, bool peer_closed)
 {
     /*assert*/
     assert(connection != NULL);
+    if (connection->closing)
+        return;
     xps_connection_destroy(connection);
     logger(LOG_INFO, "connection_close()", peer_closed ? "peer closed connection" : "closing connection");
 }

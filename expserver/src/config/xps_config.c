@@ -229,10 +229,8 @@ xps_config_lookup_t *xps_config_lookup(xps_config_t *config, xps_http_req_t *htt
     lookup->upstream = NULL;
     lookup->redirect_url = NULL;
     lookup->http_status_code = 0;
-    vec_init(&(lookup->ip_whitelist));
-    vec_init(&(lookup->ip_blacklist));
-    vec_extend(&(lookup->ip_whitelist), &(route->ip_whitelist));
-    vec_extend(&(lookup->ip_blacklist), &(route->ip_blacklist));
+    lookup->ip_whitelist = route->ip_whitelist;
+    lookup->ip_blacklist = route->ip_blacklist;
 
     if (strcmp(route->type, "file_serve") == 0)
     {
