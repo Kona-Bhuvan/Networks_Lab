@@ -3,6 +3,9 @@ import { ContainerManager } from "../core/ContainerManager";
 import { FileSystemEntry, FileType, HttpRequestTest, TestFunction } from "../types";
 import { parseHttpResponse, verifyResponseOutput } from "../utils/http";
 import * as cheerio from "cheerio";
+import { gunzipSync } from "zlib";
+import { readFileSync } from "fs";
+import { join } from "path";
 
 export const httpRequestParser: TestFunction = (port: number, requestInfo: HttpRequestTest, spawnInstance: ContainerManager) => {
     return new Promise((resolve, _) => {
@@ -337,3 +340,298 @@ export const directoryWalk: TestFunction = (path: string, directoryStructure: Fi
         }
     })
 }
+
+
+
+export const gzipHttpRequestParser: TestFunction = (
+    port: number,
+    requestInfo: HttpRequestTest,
+    spawnInstance: ContainerManager
+) => {
+    return new Promise((resolve, _) => {
+        let resolved = false;
+
+        const safeResolve = (value: any) => {
+            if (resolved) return;
+            resolved = true;
+            resolve(value);
+        };
+
+        const client = new Socket();
+        const chunks: Buffer[] = [];
+
+        const safeCleanup = () => {
+            client.removeAllListeners();
+            client.on("error", () => {});
+            client.destroy();
+        };
+
+        client.on("connectionAttemptFailed", () => {
+            safeCleanup();
+
+            return safeResolve({
+                passed: false,
+                observedBehavior: "server refused connection",
+            });
+        });
+
+        client.on("connectionAttemptTimeout", () => {
+            safeCleanup();
+
+            return safeResolve({
+                passed: false,
+                observedBehavior: "server connection timed out",
+            });
+        });
+
+        client.on("error", () => {
+            safeCleanup();
+
+            return safeResolve({
+                passed: false,
+                observedBehavior: "cannot establish a connection with server",
+            });
+        });
+
+        client.on("data", (data: Buffer) => {
+            chunks.push(Buffer.from(data));
+        });
+
+        client.on("end", () => {
+            try {
+                const response = Buffer.concat(chunks);
+
+                /*
+                 * HTTP headers and body are separated by:
+                 *
+                 * \r\n\r\n
+                 */
+                const headerSeparator = Buffer.from("\r\n\r\n");
+                const headerEnd = response.indexOf(headerSeparator);
+
+                if (headerEnd === -1) {
+                    safeCleanup();
+
+                    return safeResolve({
+                        passed: false,
+                        observedBehavior:
+                            "invalid HTTP response: headers not found",
+                    });
+                }
+
+                const headerBuffer = response.subarray(0, headerEnd);
+
+                const body = response.subarray(
+                    headerEnd + headerSeparator.length
+                );
+
+                /*
+                 * Parse only the HTTP headers as text.
+                 *
+                 * The body MUST remain a Buffer because it contains
+                 * compressed binary data.
+                 */
+                const headerLines = headerBuffer
+                    .toString()
+                    .split("\r\n");
+
+                const statusLine = headerLines.shift();
+
+                if (!statusLine) {
+                    safeCleanup();
+
+                    return safeResolve({
+                        passed: false,
+                        observedBehavior:
+                            "invalid HTTP response: missing status line",
+                    });
+                }
+
+                const statusCode = Number(statusLine.split(" ")[1]);
+
+                /*
+                 * Check status code.
+                 */
+                if (
+                    statusCode !==
+                    requestInfo.expectedResponse.statusCode
+                ) {
+                    safeCleanup();
+
+                    return safeResolve({
+                        passed: false,
+                        observedBehavior:
+                            `Expected status code ${requestInfo.expectedResponse.statusCode}, ` +
+                            `received ${statusCode}`,
+                    });
+                }
+
+                /*
+                 * Convert response headers into a map.
+                 */
+                const responseHeaders = new Map<string, string>();
+
+                for (const line of headerLines) {
+                    const separatorIndex = line.indexOf(":");
+
+                    if (separatorIndex === -1) {
+                        continue;
+                    }
+
+                    const key = line
+                        .slice(0, separatorIndex)
+                        .trim()
+                        .toLowerCase();
+
+                    const value = line
+                        .slice(separatorIndex + 1)
+                        .trim()
+                        .toLowerCase();
+
+                    responseHeaders.set(key, value);
+                }
+
+                /*
+                 * GZIP must be explicitly indicated.
+                 */
+                const contentEncoding =
+                    responseHeaders.get("content-encoding");
+
+                if (contentEncoding !== "gzip") {
+                    safeCleanup();
+
+                    return safeResolve({
+                        passed: false,
+                        observedBehavior:
+                            `Expected Content-Encoding: gzip, ` +
+                            `received ${contentEncoding || "none"}`,
+                    });
+                }
+
+                /*
+                 * Decompress the response.
+                 *
+                 * gunzipSync() will throw if the response is:
+                 * - not valid GZIP
+                 * - corrupted
+                 * - incomplete
+                 * - incorrectly finalized
+                 */
+                let decompressedBody: Buffer;
+
+                try {
+                    decompressedBody = gunzipSync(body);
+                } catch (error) {
+                    safeCleanup();
+
+                    return safeResolve({
+                        passed: false,
+                        observedBehavior:
+                            `GZIP decompression failed: ${
+                                error instanceof Error
+                                    ? error.message
+                                    : String(error)
+                            }`,
+                    });
+                }
+
+                /*
+                 * Extract the requested path.
+                 *
+                 * Example:
+                 *
+                 * GET /sample.txt HTTP/1.1
+                 *
+                 * -> /sample.txt
+                 */
+                const requestLine = requestInfo
+                    .request(spawnInstance.containerName)
+                    .split("\r\n")[0];
+
+                const requestPath = requestLine.split(" ")[1];
+
+                if (!requestPath) {
+                    safeCleanup();
+
+                    return safeResolve({
+                        passed: false,
+                        observedBehavior:
+                            "could not determine requested file",
+                    });
+                }
+
+                /*
+                 * Remove the leading '/' before joining with public/.
+                 */
+                const relativePath = decodeURIComponent(
+                    requestPath.replace(/^\/+/, "")
+                );
+
+                const originalFilePath = join(
+                    "public/common",
+                    relativePath
+                );
+
+                let originalBody: Buffer;
+
+                try {
+                    originalBody = readFileSync(originalFilePath);
+                } catch (error) {
+                    safeCleanup();
+
+                    return safeResolve({
+                        passed: false,
+                        observedBehavior:
+                            `could not read original file: ${originalFilePath}`,
+                    });
+                }
+
+                /*
+                 * Compare the decompressed response with the
+                 * original file byte-for-byte.
+                 *
+                 * Buffer.equals() works for both:
+                 * - text files
+                 * - binary files
+                 */
+                if (!decompressedBody.equals(originalBody)) {
+                    safeCleanup();
+
+                    return safeResolve({
+                        passed: false,
+                        observedBehavior:
+                            "decompressed response does not match the original file",
+                    });
+                }
+
+                safeCleanup();
+
+                return safeResolve({
+                    passed: true,
+                });
+            } catch (error) {
+                safeCleanup();
+
+                return safeResolve({
+                    passed: false,
+                    observedBehavior:
+                        error instanceof Error
+                            ? error.message
+                            : String(error),
+                });
+            }
+        });
+
+        client.connect(
+            port,
+            spawnInstance.containerName,
+            () => {
+                client.write(
+                    requestInfo.request(
+                        spawnInstance.containerName
+                    )
+                );
+            }
+        );
+    });
+};

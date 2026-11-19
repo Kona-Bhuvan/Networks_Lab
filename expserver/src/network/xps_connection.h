@@ -11,6 +11,7 @@ struct xps_connection_s
 	char *remote_ip;
 	xps_pipe_source_t *source;
 	xps_pipe_sink_t *sink;
+	bool closing;
 };
 
 xps_connection_t *xps_connection_create(xps_core_t *core, u_int sock_fd);

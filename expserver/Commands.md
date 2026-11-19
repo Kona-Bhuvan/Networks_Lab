@@ -13,6 +13,58 @@ gdb ./list_demo
 ### eXpServer Tester
 
 ```bash
+git clone https://github.com/eXpServer/expserver-tester.git
+
+cd expserver-tester/frontend
+
+npm install
+```
+
+Create `.env.local` in `frontend` and paste this in it:
+
+```text
+NEXT_PUBLIC_BACKEND_URL=http://localhost:6969
+NEXT_PUBLIC_SOCKET_URL=http://localhost:6970
+```
+
+Run
+
+```bash
+npm run build
+npm run start
+```
+
+Rename line 7 in `expserver-tester/backend/package.json` from `docker:build` to `docker-build`.
+
+Edit `.env.example`:
+
+```text
+POSTGRES_USER=user
+POSTGRES_PASSWORD=password
+POSTGRES_DB=database
+POSTGRES_HOST=postgresdb
+
+DATABASE_URL=postgresql://user:password@postgresdb:5432/database
+
+DEBUG=false
+
+REDIS_URL=redis://redis:6379
+
+HOST_PWD=/home/konabhuvan/Desktop/Networks_Lab/expserver-tester/backend
+```
+
+Run the following commands in `/backend`:
+
+```bash
+npm run docker-build
+cp .env.example .env.prod
+cp .env.example .env
+docker compose -f docker-compose.prod.yaml up -d --build
+```
+
+Run the following commands in `/frontend`:
+
+```bash
 npm run start
 ```
 
@@ -513,5 +565,34 @@ curl --interface 127.0.0.2 -i http://0.0.0.0:8004/
 ```bash
 curl -I http://localhost:8001/large.txt
 ```
+
+---
+
+# Stage 19: Gzip Compression
+
+### Server
+
+```bash
+./xps xps_config.json
+```
+
+### Create a large file
+
+```bash
+yes "This is a long line of text for testing " | head -c 1048576 > public/large.txt
+```
+
+### Gzip
+
+```bash
+gzip -t output.gz                                       // test for error/incomplete
+gzip -d -k output.gz && diff output ./public/large.txt  // decompress and compare
+```
+
+### Client
+
+[**http://localhost:8001/large.txt**](http://localhost:8001/large.txt)
+
+[**http://localhost:8004/large.txt**](http://localhost:8004/large.txt)
 
 ---

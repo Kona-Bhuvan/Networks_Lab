@@ -101,5 +101,12 @@ export const tests: StageTest = {
         descriptionFilePath: "/description/stage17.md",
         tests: stageTests.stage17,
         requiresXpsConfig: true,
+    },
+    stage19: {
+        stageName: "Gzip Compression",
+        requiresDummyServer: false,
+        descriptionFilePath: "/description/stage19.md",
+        tests: stageTests.stage19,
+        requiresXpsConfig: true,
     }
 }

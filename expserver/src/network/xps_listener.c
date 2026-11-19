@@ -110,14 +110,23 @@ void listener_connection_handler(void *ptr)
         socklen_t conn_addr_len = sizeof(conn_addr);
 
         int conn_sock_fd = accept(listener->sock_fd, (struct sockaddr *)&conn_addr, &conn_addr_len);
-        if (conn_sock_fd < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+        if (conn_sock_fd < 0)
         {
-            logger(LOG_DEBUG, "xps_listener_connection_handler()", "accept() would block, try again later");
-            break;
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+            {
+                logger(LOG_DEBUG, "listener_connection_handler()", "accept() would block, try again later");
+                break;
+            }
+            logger(LOG_ERROR, "listener_connection_handler()", "accept() failed");
+            continue;
         }
 
         /*Making socket non blocking*/
-        make_socket_non_blocking(conn_sock_fd);
+        if (make_socket_non_blocking(conn_sock_fd) != OK)
+        {
+            close(conn_sock_fd);
+            continue;
+        }
 
         /*Creating connection instance*/
         xps_connection_t *client = xps_connection_create(listener->core, conn_sock_fd);
@@ -137,6 +146,6 @@ void listener_connection_handler(void *ptr)
             return;
         }
 
-        logger(LOG_INFO, "xps_listener_connection_handler()", "created new connection on port %d", listener->port);
+        logger(LOG_INFO, "listener_connection_handler()", "created new connection on port %d", listener->port);
     }
 }

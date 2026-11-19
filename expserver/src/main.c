@@ -1,4 +1,5 @@
 #include "xps.h"
+#include <string.h>
 
 xps_cliargs_t *cliargs = NULL;
 xps_config_t *config = NULL;
@@ -8,6 +9,7 @@ void sigint_handler(int signum);
 int core_create(xps_config_t *config);
 void core_destroy(xps_core_t *core);
 void listener_connection_handler(void *ptr);
+void test_gzip(int level, char *output_file);
 
 int main(int argc, char *argv[])
 {
@@ -35,6 +37,10 @@ int main(int argc, char *argv[])
         xps_cliargs_destroy(cliargs);
         exit(EXIT_FAILURE);
     }
+
+    // test_gzip(1, "output1.gz");
+    // test_gzip(6, "output6.gz");
+    // test_gzip(9, "output9.gz");
 
     xps_core_start(core);
 
@@ -140,4 +146,112 @@ void sigint_handler(int signum)
     }
 
     exit(EXIT_SUCCESS);
+}
+
+void test_gzip_input_handler(void *ptr)
+{
+    (void)ptr;
+}
+
+void test_gzip_input_close_handler(void *ptr)
+{
+    (void)ptr;
+}
+
+void test_gzip_output_handler(void *ptr)
+{
+    xps_pipe_sink_t *sink = ptr;
+    FILE *output = sink->ptr;
+    size_t length = sink->pipe->buff_list->len;
+    xps_buffer_t *buffer = xps_pipe_sink_read(sink, length);
+
+    if (buffer == NULL)
+        return;
+
+    fwrite(buffer->data, 1, buffer->len, output);
+    xps_pipe_sink_clear(sink, length);
+    xps_buffer_destroy(buffer);
+}
+
+void test_gzip_output_close_handler(void *ptr)
+{
+    (void)ptr;
+}
+
+void test_gzip(int level, char *output_file)
+{
+    FILE *input = fopen("../public/large.txt", "rb");
+    FILE *output = fopen(output_file, "wb");
+    xps_gzip_t *gzip = xps_gzip_create(level);
+    xps_pipe_source_t *input_source;
+    xps_pipe_sink_t *output_sink;
+    xps_pipe_t *input_pipe;
+    xps_pipe_t *output_pipe;
+    u_char data[DEFAULT_BUFFER_SIZE];
+    size_t length;
+
+    if (input == NULL || output == NULL || gzip == NULL)
+    {
+        logger(LOG_ERROR, "test_gzip_pipeline()", "failed to initialize gzip test");
+        return;
+    }
+
+    input_source = xps_pipe_source_create(gzip, test_gzip_input_handler, test_gzip_input_close_handler);
+    output_sink = xps_pipe_sink_create(output, test_gzip_output_handler, test_gzip_output_close_handler);
+    input_pipe = xps_pipe_create(core, DEFAULT_PIPE_BUFF_THRESH, input_source, gzip->sink);
+    output_pipe = xps_pipe_create(core, DEFAULT_PIPE_BUFF_THRESH, gzip->source, output_sink);
+
+    struct timespec start;
+    struct timespec end;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
+    while ((length = fread(data, 1, sizeof(data), input)) > 0)
+    {
+        xps_buffer_t *buffer = xps_buffer_create(length, length, NULL);
+        memcpy(buffer->data, data, length);
+        xps_pipe_source_write(input_source, buffer);
+        xps_buffer_destroy(buffer);
+
+        gzip->sink->handler_cb(gzip->sink);
+        if (gzip->source->ready)
+        {
+            gzip->source->handler_cb(gzip->source);
+            test_gzip_output_handler(output_sink);
+        }
+    }
+
+    gzip->sink->active = false;
+    gzip->sink->close_cb(gzip->sink);
+    gzip->source->handler_cb(gzip->source);
+    test_gzip_output_handler(output_sink);
+
+    xps_pipe_source_destroy(input_source);
+    xps_pipe_sink_destroy(output_sink);
+    xps_pipe_destroy(input_pipe);
+    xps_pipe_destroy(output_pipe);
+    fclose(input);
+    fclose(output);
+
+    clock_gettime(CLOCK_MONOTONIC, &end);
+
+    struct stat input_stat;
+    struct stat output_stat;
+
+    stat("../public/large.txt", &input_stat);
+    stat(output_file, &output_stat);
+
+    double elapsed_ms =
+        (end.tv_sec - start.tv_sec) * 1000.0 +
+        (end.tv_nsec - start.tv_nsec) / 1000000.0;
+
+    printf(
+        "Level: %d | Original: %ld bytes | Compressed: %ld bytes | "
+        "Ratio: %.2f%% | Time: %.3f ms\n",
+        level,
+        input_stat.st_size,
+        output_stat.st_size,
+        100.0 * output_stat.st_size / input_stat.st_size,
+        elapsed_ms);
+
+    logger(LOG_INFO, "test_gzip()", "created %s", output_file);
 }

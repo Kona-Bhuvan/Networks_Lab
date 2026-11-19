@@ -72,6 +72,8 @@ xps_session_t *xps_session_create(xps_core_t *core, xps_connection_t *client)
     session->upstream_sink->ready = true;
     session->file_sink->ready = true;
     session->http_req = NULL;
+    session->config_lookup = NULL;
+    session->gzip = NULL;
 
     /*NOTE: We will be adding list of sessions as vec_void_t sessions to xps_core_s in xps_core module below*/
     // Add current session to core->sessions
@@ -366,17 +368,19 @@ void xps_session_destroy(xps_session_t *session)
     assert(session != NULL);
 
     /* destroy client_source, client_sink, upstream_source, upstream_sink and file_sink attached to session */
-    xps_pipe_source_destroy(session->client_source);
-    xps_pipe_sink_destroy(session->client_sink);
-    xps_pipe_source_destroy(session->upstream_source);
-    xps_pipe_sink_destroy(session->upstream_sink);
-    xps_pipe_sink_destroy(session->file_sink);
-    if (session->http_req != NULL)
-        xps_http_req_destroy(session->core, session->http_req);
-
-    if (session->to_client_buff != NULL)
+    if (session->client_source)
+        xps_pipe_source_destroy(session->client_source);
+    if (session->client_sink)
+        xps_pipe_sink_destroy(session->client_sink);
+    if (session->upstream_source)
+        xps_pipe_source_destroy(session->upstream_source);
+    if (session->upstream_sink)
+        xps_pipe_sink_destroy(session->upstream_sink);
+    if (session->file_sink)
+        xps_pipe_sink_destroy(session->file_sink);
+    if (session->to_client_buff)
         xps_buffer_destroy(session->to_client_buff);
-    if (session->from_client_buff != NULL)
+    if (session->from_client_buff)
         xps_buffer_destroy(session->from_client_buff);
 
     // Set NULL in core's list of sessions
@@ -386,9 +390,13 @@ void xps_session_destroy(xps_session_t *session)
         if (curr == session)
         {
             session->core->sessions.data[i] = NULL;
+            session->core->n_null_sessions++;
             break;
         }
     }
+
+    if (session->http_req)
+        xps_http_req_destroy(session->core, session->http_req);
 
     free(session);
 
@@ -438,8 +446,6 @@ void session_process_request(xps_session_t *session)
         return;
     }
 
-    session->config_lookup = lookup;
-
     if (lookup->ip_whitelist.length > 0)
     {
         const char *client_ip = session->client->remote_ip;
@@ -483,6 +489,7 @@ void session_process_request(xps_session_t *session)
     {
         if (lookup->dir_path != NULL)
         {
+            logger(LOG_DEBUG, "session_process_request()", "Serving directory: %s", lookup->dir_path);
             xps_buffer_t *dir_html = xps_directory_browsing(lookup->dir_path, session->http_req->path);
             if (dir_html == NULL)
             {
@@ -497,10 +504,10 @@ void session_process_request(xps_session_t *session)
         }
         else
         {
+            logger(LOG_DEBUG, "session_process_request()", "Serving file: %s", lookup->file_path);
             int file_error = 0;
             xps_file_t *file = xps_file_create(session->core, lookup->file_path, &file_error);
             session->file = file;
-            printf("[Experiment] Serving file: %s | Size: %zu bytes\n", lookup->file_path, session->file->size);
             if (file_error == E_NOTFOUND)
             {
                 session_send_response(session, HTTP_NOT_FOUND, 0, "text/html", NULL);
@@ -520,13 +527,59 @@ void session_process_request(xps_session_t *session)
                 return;
             }
 
-            if (session_send_response(session, HTTP_OK, session->file->size, session->file->mime_type, NULL) != OK)
+            printf("[Experiment] Serving file: %s | Size: %zu bytes\n\n", lookup->file_path, session->file->size);
+
+            if (lookup->gzip_enable)
             {
-                xps_config_lookup_destroy(lookup, session->core);
-                return;
+                session->gzip = xps_gzip_create(lookup->gzip_level);
+                if (session->gzip == NULL)
+                {
+                    logger(LOG_ERROR, "session_process_request()", "xps_gzip_create() failed");
+                    session_send_response(session, HTTP_INTERNAL_SERVER_ERROR, 0, "text/html", NULL);
+                    xps_config_lookup_destroy(lookup, session->core);
+                    return;
+                }
+
+                if (xps_pipe_create(session->core, DEFAULT_PIPE_BUFF_THRESH, session->file->source, session->gzip->sink) == NULL)
+                {
+                    logger(LOG_ERROR, "session_process_request()", "xps_pipe_create() failed for file source to gzip sink");
+                    session_send_response(session, HTTP_INTERNAL_SERVER_ERROR, 0, "text/html", NULL);
+                    xps_config_lookup_destroy(lookup, session->core);
+                    return;
+                }
+                if (xps_pipe_create(session->core, DEFAULT_PIPE_BUFF_THRESH, session->gzip->source, session->file_sink) == NULL)
+                {
+                    logger(LOG_ERROR, "session_process_request()", "xps_pipe_create() failed for gzip source to file sink");
+                    session_send_response(session, HTTP_INTERNAL_SERVER_ERROR, 0, "text/html", NULL);
+                    xps_config_lookup_destroy(lookup, session->core);
+                    return;
+                }
+
+                xps_http_res_t *response = xps_http_res_create(session->core, HTTP_OK);
+                xps_http_set_header(&response->headers, "Content-Encoding", "gzip");
+                xps_http_set_header(&response->headers, "Content-Type", session->file->mime_type);
+                xps_http_set_header(&response->headers, "Connection", "close");
+
+                xps_buffer_t *res_buff = xps_http_res_serialize(response);
+                set_to_client_buff(session, res_buff);
+                xps_http_res_destroy(response);
+            }
+            else
+            {
+                if (xps_pipe_create(session->core, DEFAULT_PIPE_BUFF_THRESH, session->file->source, session->file_sink) == NULL)
+                {
+                    logger(LOG_ERROR, "session_process_request()", "xps_pipe_create() failed for file source to file sink");
+                    session_send_response(session, HTTP_INTERNAL_SERVER_ERROR, 0, "text/html", NULL);
+                    xps_config_lookup_destroy(lookup, session->core);
+                    return;
+                }
+                if (session_send_response(session, HTTP_OK, session->file->size, session->file->mime_type, NULL) != OK)
+                {
+                    xps_config_lookup_destroy(lookup, session->core);
+                    return;
+                }
             }
 
-            xps_pipe_create(session->core, DEFAULT_PIPE_BUFF_THRESH, session->file->source, session->file_sink);
             xps_config_lookup_destroy(lookup, session->core);
             return;
         }
@@ -566,7 +619,9 @@ void session_process_request(xps_session_t *session)
             xps_config_lookup_destroy(lookup, session->core);
             return;
         }
-        if (xps_http_set_header(&http_res->headers, "Location", lookup->redirect_url) != OK)
+        if (xps_http_set_header(&http_res->headers, "Location", lookup->redirect_url) != OK || 
+            xps_http_set_header(&http_res->headers, "Content-Length", "0") != OK ||
+            xps_http_set_header(&http_res->headers, "Connection", "close") != OK)
         {
             logger(LOG_ERROR, "session_process_request()", "failed to set redirect response headers");
             xps_http_res_destroy(http_res);

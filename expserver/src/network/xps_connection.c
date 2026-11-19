@@ -30,6 +30,7 @@ xps_connection_t *xps_connection_create(xps_core_t *core, u_int sock_fd)
     }
 
     connection->remote_ip = NULL;
+    connection->closing = false;
 
     /*Create source instance*/
     xps_pipe_source_t *source = xps_pipe_source_create(connection, connection_source_handler, connection_source_close_handler);
@@ -77,6 +78,9 @@ xps_connection_t *xps_connection_create(xps_core_t *core, u_int sock_fd)
 void xps_connection_destroy(xps_connection_t *connection)
 {
     assert(connection != NULL);
+    if (connection->closing)
+        return;
+    connection->closing = true;
 
     /* set connection to NULL in 'connections' list */
     for (int i = 0; i < connection->core->connections.length; i++)
@@ -92,15 +96,11 @@ void xps_connection_destroy(xps_connection_t *connection)
 
     /* detach connection from loop */
     xps_loop_detach(connection->core->loop, connection->sock_fd);
+    xps_pipe_source_destroy(connection->source);
+    xps_pipe_sink_destroy(connection->sink);
 
     /* close connection socket FD */
     close(connection->sock_fd);
-
-    /*destroy source*/
-    xps_pipe_source_destroy(connection->source);
-
-    /*destroy sink*/
-    xps_pipe_sink_destroy(connection->sink);
 
     /* free connection->remote_ip */
     free(connection->remote_ip);
@@ -129,9 +129,7 @@ void connection_loop_close_handler(void *ptr)
 {
     assert(ptr != NULL);
     xps_connection_t *connection = ptr;
-
-    if (connection == NULL)
-        return;
+    assert(connection != NULL);
 
     connection_close(connection, true);
     logger(LOG_DEBUG, "connection_loop_close_handler()", "connection closed");
@@ -208,7 +206,7 @@ void connection_source_close_handler(void *ptr)
     xps_pipe_source_t *source = ptr;
     xps_connection_t *connection = (xps_connection_t *)source->ptr;
 
-    if (!connection->source->active && !connection->sink->active)
+    if (!source->active && (source->pipe == NULL || source->pipe->sink == NULL || !source->pipe->sink->active))
     {
         /*close connection*/
         logger(LOG_INFO, "connection_source_close_handler()", "both source and sink inactive, closing connection");
@@ -267,7 +265,7 @@ void connection_sink_close_handler(void *ptr)
     xps_pipe_sink_t *sink = ptr;
     xps_connection_t *connection = (xps_connection_t *)sink->ptr;
 
-    if (!connection->source->active && !connection->sink->active)
+    if (!sink->active && (sink->pipe->source == NULL || !sink->pipe->source->active))
     {
         /*close connection*/
         connection_close(connection, false);
@@ -279,6 +277,8 @@ void connection_close(xps_connection_t *connection, bool peer_closed)
 {
     /*assert*/
     assert(connection != NULL);
+    if (connection->closing)
+        return;
     xps_connection_destroy(connection);
     logger(LOG_INFO, "connection_close()", peer_closed ? "peer closed connection" : "closing connection");
 }

@@ -2,7 +2,7 @@ import { Core } from '../../core/Core';
 import { Request, Response } from '../../types';
 import expressAsyncHandler from 'express-async-handler';
 import { deleteFile, getFilePath, verifyStageNo } from '../../utils/file';
-import { chmod } from 'fs';
+import { chmod, access, constants } from 'fs';
 import { FILE_EXECUTABLE_PERMS } from '../../constants';
 import { FileModel } from '../../models/file.model';
 
@@ -71,10 +71,27 @@ const uploadBinaryHandler = expressAsyncHandler(async (req: Request, res: Respon
         throw new Error("Error creating DB entry");
     }
 
-    chmod(absolutePath, FILE_EXECUTABLE_PERMS, (err) => {
-        if (err)
-            return;
-    })
+    await new Promise<void>((resolve, reject) => {
+        chmod(absolutePath, FILE_EXECUTABLE_PERMS, (err) => {
+            if (err)
+                return reject(err);
+            return resolve();
+        })
+    }).catch(() => {
+        res.status(500);
+        throw new Error("Uploaded binary could not be made executable");
+    });
+
+    await new Promise<void>((resolve, reject) => {
+        access(absolutePath, constants.X_OK, (err) => {
+            if (err)
+                return reject(err);
+            return resolve();
+        });
+    }).catch(() => {
+        res.status(500);
+        throw new Error("Uploaded binary is not executable");
+    });
 
 
     res.status(200).json({

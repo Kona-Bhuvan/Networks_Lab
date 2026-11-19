@@ -96,7 +96,7 @@ xps_file_t *xps_file_create(xps_core_t *core, const char *file_path, int *error)
         fclose(file_struct);
         return NULL;
     }
-    
+
     xps_pipe_source_t *source = xps_pipe_source_create((void *)file, file_source_handler, file_source_close_handler);
 
     if (source == NULL)
@@ -138,7 +138,10 @@ void xps_file_destroy(xps_file_t *file)
     if (file->file_struct != NULL)
         fclose(file->file_struct);
     if (file->source != NULL)
+    {
         xps_pipe_source_destroy(file->source);
+        file->source = NULL;
+    }
     free(file);
 
     logger(LOG_DEBUG, "xps_file_destroy()", "destroyed file struct");
@@ -170,7 +173,7 @@ void file_source_handler(void *ptr)
     {
         logger(LOG_ERROR, "file_source_handler()", "fread() failed");
         xps_buffer_destroy(buff);
-        source->ready = false;
+        xps_file_destroy(file);
         return;
     }
 
@@ -179,11 +182,18 @@ void file_source_handler(void *ptr)
     {
         logger(LOG_INFO, "file_source_handler()", "end of file reached");
         xps_buffer_destroy(buff);
-        source->ready = false;
+        xps_file_destroy(file);
         return;
     }
 
-    xps_pipe_source_write(source, buff);
+    if(xps_pipe_source_write(source, buff) != OK)
+    {
+        logger(LOG_ERROR, "file_source_handler()", "xps_pipe_source_write() failed");
+        xps_buffer_destroy(buff);
+        xps_file_destroy(file);
+        return;
+    }
+
     xps_buffer_destroy(buff);
 }
 
